@@ -96,6 +96,6 @@ struct GuidedJournalStartView: View {
     guard started == false else { return }
     started = true
     UIDevice.current.isProximityMonitoringEnabled = false
-    router.navigate(to: .checkin(kind))
+    router.navigate(to: .journalCall(kind))
   }
 }

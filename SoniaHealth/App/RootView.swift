@@ -13,6 +13,8 @@ struct RootView: View {
         SplashView()
       case .journalStart(let kind):
         GuidedJournalStartView(kind: kind)
+      case .journalCall(let kind):
+        GuidedJournalCallView(kind: kind)
       case .checkin(let kind):
         CheckInFlowView(kind: kind)
       case .session:
@@ -67,6 +69,8 @@ private struct SplashView: View {
     case "evening": return .checkin(.eveningReflection)
     case "morningstart": return .journalStart(.morningIntention)
     case "eveningstart": return .journalStart(.eveningReflection)
+    case "morningcall": return .journalCall(.morningIntention)
+    case "eveningcall": return .journalCall(.eveningReflection)
     case "session": return .session
     default: return nil
     }

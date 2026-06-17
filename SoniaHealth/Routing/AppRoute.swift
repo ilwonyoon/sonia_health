@@ -10,7 +10,8 @@ enum AppRoute: Equatable {
   case content     // Content "Today" tab (IMG_3388): journal — open cards + completed timeline
   case you         // "You" tab (placeholder for now)
   case journalStart(JournalCheckinKind)  // Guided-journal "call" landing: lift to your ear to begin
-  case checkin(JournalCheckinKind)  // Guided answer flow (IMG_3369–3373) for an unanswered check-in
+  case journalCall(JournalCheckinKind)   // Hands-free guided-journal call (earpiece + voice turn-taking)
+  case checkin(JournalCheckinKind)  // Guided answer flow (IMG_3369–3373) — text fallback for the journal
   case session
   case history
   case settings
