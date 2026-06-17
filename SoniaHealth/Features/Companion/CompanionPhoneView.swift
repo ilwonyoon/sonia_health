@@ -39,32 +39,19 @@ struct CompanionPhoneView: View {
   // MARK: - Top chips
 
   private var topChips: some View {
-    HStack {
-      SRGlassIconButton(systemName: "person", accessibilityLabel: "Profile") {
-        router.navigate(to: .you)
+    Button { showAgentSelector = true } label: {
+      HStack(spacing: SRSpacing.s4) {
+        SRText(agentName, style: .bodyEmphasis)
+        Image(systemName: "chevron.down")
+          .font(.system(size: 12, weight: .semibold))
+          .foregroundStyle(SRColor.textSecondary)
       }
-
-      Spacer()
-
-      Button { showAgentSelector = true } label: {
-        HStack(spacing: SRSpacing.s4) {
-          SRText(agentName, style: .bodyEmphasis)
-          Image(systemName: "chevron.down")
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(SRColor.textSecondary)
-        }
-        .padding(.horizontal, SRSpacing.s16)
-        .padding(.vertical, SRSpacing.s10)
-        .glassCapsule()
-      }
-      .buttonStyle(.plain)
-
-      Spacer()
-
-      SRGlassIconButton(systemName: "sparkles", accessibilityLabel: "Sonia") {
-        showAgentSelector = true
-      }
+      .padding(.horizontal, SRSpacing.s16)
+      .padding(.vertical, SRSpacing.s10)
+      .glassCapsule()
     }
+    .buttonStyle(.plain)
+    .frame(maxWidth: .infinity)
   }
 
   // MARK: - Call button
