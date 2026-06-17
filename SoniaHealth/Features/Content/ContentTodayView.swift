@@ -15,7 +15,7 @@ struct ContentTodayView: View {
   ]
 
   var body: some View {
-    ZStack(alignment: .bottom) {
+    ZStack {
       SRColor.backgroundCanvas.ignoresSafeArea()
 
       ScrollView {
@@ -26,21 +26,10 @@ struct ContentTodayView: View {
           }
           if !today.openItems.isEmpty { openSection }
           if !today.completedItems.isEmpty { completedSection }
-          Color.clear.frame(height: 96) // clearance for the floating tab bar
         }
         .padding(.horizontal, SRSpacing.s20)
         .padding(.top, SRSpacing.s12)
       }
-
-      SRTabBarGlass(selected: .content) { tab in
-        switch tab {
-        case .phone: router.navigate(to: .companion)
-        case .you, .settings: router.present(sheet: .settings)
-        case .content, .chat: break
-        }
-      }
-      .padding(.horizontal, SRSpacing.s16)
-      .padding(.bottom, SRSpacing.s8)
     }
   }
 

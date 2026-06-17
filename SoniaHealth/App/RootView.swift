@@ -11,16 +11,14 @@ struct RootView: View {
       switch router.currentRoute {
       case .splash:
         SplashView()
-      case .onboarding, .home, .history, .settings:
-        CompanionPhoneView()
-      case .companion:
-        CompanionPhoneView()
-      case .content:
-        ContentTodayView()
       case .checkin(let kind):
         CheckInFlowView(kind: kind)
       case .session:
         SessionView()
+      default:
+        // All tabbed routes (companion / chat / content / you / settings / home …)
+        // live inside the native Liquid Glass tab shell.
+        MainTabView()
       }
     }
     .sheet(item: Binding(

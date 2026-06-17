@@ -29,13 +29,6 @@ struct CompanionPhoneView: View {
         }
         .padding(.horizontal, SRSpacing.s16)
         .padding(.bottom, SRSpacing.s16)
-
-        SRTabBarGlass(selected: .phone) { tab in
-          if tab == .content { router.navigate(to: .content) }
-          else if tab == .you || tab == .settings { router.present(sheet: .settings) }
-        }
-        .padding(.horizontal, SRSpacing.s16)
-        .padding(.bottom, SRSpacing.s8)
       }
     }
   }
