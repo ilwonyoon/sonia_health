@@ -13,6 +13,10 @@ final class CartesiaSTTClient {
   private var flushContinuation: CheckedContinuation<Void, Never>?
   private var isReceiving = false
 
+  /// Live transcript for captions: fires on every transcript message (interim +
+  /// final) with the cumulative text so the user's words appear as they speak.
+  var onLiveTranscript: ((String) -> Void)?
+
   func connect() {
     let task = session.webSocketTask(with: CartesiaConfig.sttWebSocketURL)
     self.task = task
@@ -95,8 +99,14 @@ final class CartesiaSTTClient {
     switch type {
     case "transcript":
       let isFinal = (json["is_final"] as? Bool) ?? false
-      if isFinal, let text = json["text"] as? String, text.isEmpty == false {
-        finalSegments.append(text)
+      if let text = json["text"] as? String, text.isEmpty == false {
+        if isFinal { finalSegments.append(text) }
+        // Cumulative live text = finalized words + the current interim fragment.
+        let interim = isFinal ? [] : [text]
+        let live = (finalSegments + interim)
+          .joined(separator: " ")
+          .trimmingCharacters(in: .whitespacesAndNewlines)
+        onLiveTranscript?(live)
       }
     case "flush_done", "done":
       resolveFlush()

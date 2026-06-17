@@ -10,6 +10,10 @@ final class CartesiaTTSClient {
   private var doneContinuation: CheckedContinuation<Void, Never>?
   private var isReceiving = false
 
+  /// Per-word timing for live "karaoke" captions: each batch carries words and their
+  /// start times (seconds from the start of the audio). Set before calling `speak`.
+  var onTimestamps: ((_ words: [String], _ starts: [Double]) -> Void)?
+
   /// Speaks `text` with the given voice. Resolves when the stream completes (or errors).
   func speak(
     _ text: String,
@@ -47,6 +51,7 @@ final class CartesiaTTSClient {
       "transcript": text,
       "language": CartesiaConfig.language,
       "voice": ["mode": "id", "id": voiceID],
+      "add_timestamps": true,
       "output_format": [
         "container": "raw",
         "encoding": "pcm_s16le",
@@ -104,6 +109,15 @@ final class CartesiaTTSClient {
     case "chunk":
       if let base64 = json["data"] as? String, let pcm = Data(base64Encoded: base64) {
         onChunk?(pcm)
+      }
+      return false
+    case "timestamps":
+      if let wt = json["word_timestamps"] as? [String: Any],
+         let words = wt["words"] as? [String] {
+        let starts = (wt["start"] as? [Double])
+          ?? (wt["start"] as? [NSNumber])?.map(\.doubleValue)
+          ?? []
+        onTimestamps?(words, starts)
       }
       return false
     case "done":

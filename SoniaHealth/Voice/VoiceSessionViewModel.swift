@@ -25,7 +25,15 @@ final class VoiceSessionViewModel: ObservableObject {
   @Published private(set) var statusText = "Connecting…"
   @Published private(set) var transcript: [Line] = []
   @Published private(set) var inputLevel: Float = 0
+  /// Word-by-word caption that updates live as the user speaks (STT interim) and as
+  /// Sonia speaks (TTS word timestamps synced to playback).
+  @Published private(set) var liveCaption: String = ""
   @Published var permissionDenied = false
+
+  // Live caption reveal state for the AI side (TTS karaoke).
+  private var ttsWords: [String] = []
+  private var ttsStarts: [Double] = []
+  private var ttsAnchor: Date?
 
   private let audio = AudioSessionController()
   private let claude = ClaudeClient()
@@ -145,6 +153,13 @@ final class VoiceSessionViewModel: ObservableObject {
 
     let stt = CartesiaSTTClient()
     currentSTT = stt
+    liveCaption = ""
+    stt.onLiveTranscript = { [weak self] live in
+      Task { @MainActor in
+        guard let self, self.state == .listening else { return }
+        self.liveCaption = live
+      }
+    }
     stt.connect()
 
     do {
@@ -197,6 +212,12 @@ final class VoiceSessionViewModel: ObservableObject {
     state = .speaking
     statusText = "Sonia is speaking…"
 
+    // Reset the karaoke reveal state for this utterance.
+    liveCaption = ""
+    ttsWords = []
+    ttsStarts = []
+    ttsAnchor = nil
+
     do {
       try audio.startPlayback()
     } catch {
@@ -205,10 +226,42 @@ final class VoiceSessionViewModel: ObservableObject {
 
     let tts = CartesiaTTSClient()
     currentTTS = tts
+    tts.onTimestamps = { [weak self] words, starts in
+      Task { @MainActor in self?.revealTTSWords(words, starts: starts) }
+    }
     await tts.speak(text) { [weak self] chunk in
+      Task { @MainActor in self?.markPlaybackStartedIfNeeded() }
       self?.audio.enqueueTTS(pcmS16LE: chunk)
     }
     currentTTS = nil
+
+    // Guarantee the full line is shown once playback finishes (covers any missed words).
+    if state == .speaking { liveCaption = text }
+  }
+
+  /// Anchors the caption reveal clock to when audio actually starts playing.
+  private func markPlaybackStartedIfNeeded() {
+    if ttsAnchor == nil { ttsAnchor = Date() }
+  }
+
+  /// Schedules each word to appear at its audio start time, synced to playback.
+  private func revealTTSWords(_ words: [String], starts: [Double]) {
+    if ttsAnchor == nil { ttsAnchor = Date() }
+    let anchor = ttsAnchor ?? Date()
+    let base = ttsWords.count
+    ttsWords.append(contentsOf: words)
+    ttsStarts.append(contentsOf: starts)
+
+    for offset in 0..<words.count {
+      let index = base + offset
+      let startSec = index < ttsStarts.count ? ttsStarts[index] : 0
+      let delay = max(0, anchor.addingTimeInterval(startSec).timeIntervalSinceNow)
+      Task { @MainActor [weak self] in
+        try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+        guard let self, self.state == .speaking, index < self.ttsWords.count else { return }
+        self.liveCaption = self.ttsWords[0...index].joined(separator: " ")
+      }
+    }
   }
 
   private func setIdle() {

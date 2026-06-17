@@ -73,10 +73,18 @@ struct SessionView: View {
 
   private var captionText: String {
     switch model.state {
-    case .connecting: return "Connecting…"
-    case .listening: return "Listening…"
-    case .thinking: return "…"
-    default: return model.transcript.last?.text ?? SoniaSystemPrompt.introduction
+    case .connecting:
+      return "Connecting…"
+    case .listening:
+      return model.liveCaption.isEmpty ? "Listening…" : model.liveCaption
+    case .thinking:
+      return model.liveCaption.isEmpty ? "…" : model.liveCaption
+    case .speaking:
+      return model.liveCaption.isEmpty
+        ? (model.transcript.last?.text ?? "")
+        : model.liveCaption
+    default:
+      return model.transcript.last?.text ?? SoniaSystemPrompt.introduction
     }
   }
 
