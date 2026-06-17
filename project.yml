@@ -28,6 +28,9 @@ targets:
       - path: SoniaHealth
         excludes:
           - "Config/*.xcconfig"
+          - "**/.claude/**"
+          - "**/docs/**"
+          - "**/*.md"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ilwonyoon.SoniaHealth
