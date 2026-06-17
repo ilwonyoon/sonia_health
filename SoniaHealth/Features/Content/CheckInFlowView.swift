@@ -1,27 +1,21 @@
 import SwiftUI
 
-/// Guided check-in answering flow (IMG_3369–3373) — shown when a Morning Intention
-/// or Evening Reflection hasn't been answered yet. A short multi-question sequence
-/// with a segmented progress bar, a typed/spoken response, and Continue / Complete.
-///
-/// Questions come from our persona seed (journal_today.json → checkinQuestions).
+/// Guided check-in answering flow — shown when a Morning Intention or Evening Reflection
+/// hasn't been answered yet. An *adaptive* sequence: Q1 is fetched up front, Q2/Q3 are
+/// generated on the fly from the user's memory + their previous answers (see
+/// `GuidedJournalSession`). Completed answers persist so the morning flows into the evening.
 struct CheckInFlowView: View {
   @EnvironmentObject private var router: AppRouter
   let kind: JournalCheckinKind
 
-  private let questions: [String]
-  @State private var index = 0
-  @State private var answers: [String]
+  @StateObject private var session: GuidedJournalSession
   @FocusState private var inputFocused: Bool
 
   init(kind: JournalCheckinKind) {
     self.kind = kind
-    let qs = JournalStore.loadOrFatal().questions(for: kind)
-    self.questions = qs
-    _answers = State(initialValue: Array(repeating: "", count: qs.count))
+    _session = StateObject(wrappedValue: GuidedJournalSession(kind: kind))
   }
 
-  private var isLast: Bool { index >= questions.count - 1 }
   private var accent: Color {
     kind == .morningIntention ? SRColor.accentMorning : SRColor.accentEvening
   }
@@ -38,22 +32,33 @@ struct CheckInFlowView: View {
 
       VStack(spacing: SRSpacing.s24) {
         header
-        CheckInProgressBar(total: questions.count, current: index, accent: accent)
-        CheckInQuestionHeader(
-          symbol: symbol,
-          step: index + 1,
-          total: questions.count,
-          question: questions.indices.contains(index) ? questions[index] : "",
-          accent: accent
-        )
-        Spacer(minLength: SRSpacing.s24)
-        CheckInResponseField(text: answerBinding, accent: accent, focused: $inputFocused)
-        controls
+        CheckInProgressBar(total: session.total, current: session.index, accent: accent)
+
+        switch session.phase {
+        case .loading, .generating:
+          Spacer()
+          GuidedJournalWaitingView(kind: kind, phase: session.phase, accent: accent)
+          Spacer()
+        case .answering, .complete:
+          CheckInQuestionHeader(
+            symbol: symbol,
+            step: session.index + 1,
+            total: session.total,
+            question: session.currentQuestion,
+            accent: accent
+          )
+          Spacer(minLength: SRSpacing.s24)
+          CheckInResponseField(text: answerBinding, accent: accent, focused: $inputFocused)
+          controls
+        }
       }
       .padding(.horizontal, SRSpacing.s20)
       .padding(.top, SRSpacing.s8)
       .padding(.bottom, SRSpacing.s16)
+      .animation(.easeInOut(duration: 0.25), value: session.phase)
+      .animation(.easeInOut(duration: 0.25), value: session.index)
     }
+    .task { await session.start() }
   }
 
   // MARK: Header
@@ -62,7 +67,7 @@ struct CheckInFlowView: View {
     ZStack {
       SRText(title, style: .navigationTitle)
       HStack {
-        Button { back() } label: {
+        Button { router.navigate(to: .content) } label: {
           Image(systemName: "chevron.left")
             .font(.system(size: 16, weight: .semibold))
             .foregroundStyle(SRColor.textPrimary)
@@ -79,8 +84,8 @@ struct CheckInFlowView: View {
 
   private var controls: some View {
     HStack {
-      if index > 0 {
-        Button { previous() } label: {
+      if session.canGoPrevious {
+        Button { session.goPrevious() } label: {
           HStack(spacing: SRSpacing.s4) {
             Image(systemName: "chevron.left").font(.system(size: 12, weight: .semibold))
             Text("Previous").font(.system(size: 15, weight: .medium))
@@ -92,8 +97,8 @@ struct CheckInFlowView: View {
       Spacer()
       Button { advance() } label: {
         HStack(spacing: SRSpacing.s4) {
-          Text(isLast ? "Complete" : "Continue").font(.system(size: 15, weight: .semibold))
-          Image(systemName: isLast ? "checkmark" : "chevron.right")
+          Text(session.isLast ? "Complete" : "Continue").font(.system(size: 15, weight: .semibold))
+          Image(systemName: session.isLast ? "checkmark" : "chevron.right")
             .font(.system(size: 12, weight: .semibold))
         }
         .foregroundStyle(SRColor.textOnAccent)
@@ -109,25 +114,19 @@ struct CheckInFlowView: View {
 
   private var answerBinding: Binding<String> {
     Binding(
-      get: { answers.indices.contains(index) ? answers[index] : "" },
-      set: { if answers.indices.contains(index) { answers[index] = $0 } }
+      get: { session.currentAnswer },
+      set: { session.setCurrentAnswer($0) }
     )
   }
 
   private func advance() {
-    if isLast {
-      // Prototype: a real build would persist the answers + flip the item to completed.
-      router.navigate(to: .content)
-    } else {
-      withAnimation(.easeInOut(duration: 0.2)) { index += 1 }
+    inputFocused = false
+    Task {
+      await session.advance()
+      if session.phase == .complete {
+        // Reward / report screen comes in the next chunk; for now return to Today.
+        router.navigate(to: .content)
+      }
     }
-  }
-
-  private func previous() {
-    withAnimation(.easeInOut(duration: 0.2)) { index = max(0, index - 1) }
-  }
-
-  private func back() {
-    router.navigate(to: .content)
   }
 }
