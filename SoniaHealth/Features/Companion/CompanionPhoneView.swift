@@ -1,50 +1,104 @@
 import SwiftUI
 
-/// Companion "Phone" tab — faithful recreation of IMG_3383.
-/// Full-bleed moody backdrop + scrim, avatar + glass name chip, serif italic
-/// pull-quote, slide-to-start control, and the 5-tab glass bar.
-///
-/// NOTE: the backdrop is a placeholder gradient (no stock photo wired yet);
-/// drop a photo into Assets and swap `backdrop` to match the reference exactly.
+/// Companion "Phone" tab — redesigned per IMG_3468.
+/// No big avatar: a calm canvas with three top chips (profile · agent name · Sonia mark)
+/// and one clear call button at the bottom. Tapping the name chip opens the agent picker.
+/// (Chat / "Send a text" is intentionally out of scope for now.)
 struct CompanionPhoneView: View {
   @EnvironmentObject private var router: AppRouter
+  @State private var showAgentSelector = false
+  @State private var agentName = "Sonia"
+
+  private var agents: [AgentSelectorSheet.Agent] {
+    [.init(id: "sonia", name: "Sonia",
+           blurb: "A warm, evidence-based companion for calmer days.")]
+  }
 
   var body: some View {
     ZStack {
       CompanionBackdrop()
 
       VStack(spacing: 0) {
-        SRCompanionHeader(name: "Michelle")
-          .padding(.top, SRSpacing.s24)
+        topChips
+          .padding(.horizontal, SRSpacing.s16)
+          .padding(.top, SRSpacing.s8)
 
-        Spacer(minLength: SRSpacing.s24)
+        Spacer(minLength: 0)
 
-        quote
-          .padding(.horizontal, SRSpacing.s32)
-
-        Spacer(minLength: SRSpacing.s24)
-
-        SRSlideToStart(title: "Slide to start session") {
-          router.navigate(to: .session)
-        }
-        .padding(.horizontal, SRSpacing.s16)
-        .padding(.bottom, SRSpacing.s16)
+        callButton
+          .padding(.bottom, SRSpacing.s32)
+      }
+    }
+    .sheet(isPresented: $showAgentSelector) {
+      AgentSelectorSheet(agents: agents) { agent in
+        agentName = agent.name
       }
     }
   }
 
-  // MARK: - Quote
+  // MARK: - Top chips
 
-  private var quote: some View {
+  private var topChips: some View {
+    HStack {
+      SRGlassIconButton(systemName: "person", accessibilityLabel: "Profile") {
+        router.navigate(to: .you)
+      }
+
+      Spacer()
+
+      Button { showAgentSelector = true } label: {
+        HStack(spacing: SRSpacing.s4) {
+          SRText(agentName, style: .bodyEmphasis)
+          Image(systemName: "chevron.down")
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(SRColor.textSecondary)
+        }
+        .padding(.horizontal, SRSpacing.s16)
+        .padding(.vertical, SRSpacing.s10)
+        .glassCapsule()
+      }
+      .buttonStyle(.plain)
+
+      Spacer()
+
+      SRGlassIconButton(systemName: "sparkles", accessibilityLabel: "Sonia") {
+        showAgentSelector = true
+      }
+    }
+  }
+
+  // MARK: - Call button
+
+  private var callButton: some View {
     VStack(spacing: SRSpacing.s12) {
-      SRText(
-        "I want them to think of me as someone you can always trust.",
-        style: .quote,
-        tone: .primary
-      )
-      .multilineTextAlignment(.center)
+      Button { router.navigate(to: .session) } label: {
+        ZStack {
+          Circle()
+            .fill(SRColor.backgroundElevated)
+            .shadow(color: .black.opacity(0.12), radius: 16, y: 6)
+          Image(systemName: "phone.fill")
+            .font(.system(size: 26, weight: .semibold))
+            .foregroundStyle(SRColor.brandAccent)
+        }
+        .frame(width: 76, height: 76)
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel("Start a call")
 
-      SRText("— You", style: .supporting, tone: .secondary)
+      SRText("Start a call", style: .supporting, tone: .secondary)
+    }
+  }
+}
+
+// MARK: - Glass capsule helper
+
+private extension View {
+  @ViewBuilder
+  func glassCapsule() -> some View {
+    if #available(iOS 26.0, *) {
+      glassEffect(.regular.interactive(), in: Capsule(style: .continuous))
+    } else {
+      background(.ultraThinMaterial, in: Capsule(style: .continuous))
     }
   }
 }

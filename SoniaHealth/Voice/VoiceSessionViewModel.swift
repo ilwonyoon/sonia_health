@@ -35,6 +35,10 @@ final class VoiceSessionViewModel: ObservableObject {
   @Published private(set) var revealedWordCount: Int = 0
   @Published var permissionDenied = false
 
+  /// In-call controls (IMG_3471): mute the mic, and route audio to speaker vs receiver.
+  @Published private(set) var isMuted = false
+  @Published private(set) var isSpeakerOn = true
+
   // Live caption reveal state for the AI side (TTS karaoke).
   private var ttsWords: [String] = []
   private var ttsStarts: [Double] = []
@@ -201,13 +205,33 @@ final class VoiceSessionViewModel: ObservableObject {
     stt.connect()
 
     do {
-      try audio.startCapturing()
+      // Honor mute across turns: stay in `.listening` but don't open the mic.
+      if isMuted == false { try audio.startCapturing() }
       state = .listening
-      statusText = "Listening…"
+      statusText = isMuted ? "Muted" : "Listening…"
     } catch {
       state = .error("Couldn't start the microphone.")
       statusText = "Audio error"
     }
+  }
+
+  // MARK: - In-call controls
+
+  func toggleMute() {
+    isMuted.toggle()
+    if isMuted {
+      audio.stopCapturing()
+      inputLevel = 0
+      if state == .listening { statusText = "Muted" }
+    } else if state == .listening {
+      try? audio.startCapturing()
+      statusText = "Listening…"
+    }
+  }
+
+  func toggleSpeaker() {
+    isSpeakerOn.toggle()
+    audio.setSpeaker(isSpeakerOn)
   }
 
   /// Mic level callback. Drives the meter and the silence-based endpointing: once the

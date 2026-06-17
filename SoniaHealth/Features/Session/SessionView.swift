@@ -1,64 +1,90 @@
 import SwiftUI
 
-/// Live voice session — faithful recreation of IMG_3384 (Companion call):
-/// moody photo backdrop, companion header, top-right pause, right-side glass control
-/// rail, and a bottom live caption. Tap anywhere (or the touch control) to speak.
+/// Live voice session — redesigned per IMG_3471. Hands-free call: a name chip on top,
+/// the live caption in the middle, and a clean bottom control row — a clear red
+/// end-call button, plus mic-mute and speaker toggles (no "pause").
 struct SessionView: View {
   @EnvironmentObject private var router: AppRouter
   @StateObject private var model = VoiceSessionViewModel()
 
   var body: some View {
     ZStack {
-      CompanionBackdrop(dim: 0.25)
-        .contentShape(Rectangle())
-        .onTapGesture { model.toggleMic() }
+      CompanionBackdrop()
 
       VStack(spacing: 0) {
-        SRCompanionHeader(name: "Sonia")
+        nameChip
           .padding(.top, SRSpacing.s12)
-          .frame(maxWidth: .infinity)
-          .overlay(alignment: .topTrailing) {
-            SRGlassIconButton(systemName: "pause.fill", accessibilityLabel: "End session",
-                              foregroundColor: SRColor.textPrimary) {
-              model.end()
-              router.navigate(to: .companion)
-            }
-            .padding(.trailing, SRSpacing.s16)
-          }
 
         Spacer(minLength: 0)
 
         caption
           .padding(.horizontal, SRSpacing.s20)
-          .padding(.bottom, SRSpacing.s32)
-      }
 
-      controlRail
+        Spacer(minLength: 0)
+
+        controlBar
+          .padding(.horizontal, SRSpacing.s24)
+          .padding(.bottom, SRSpacing.s16)
+      }
     }
     .task { await model.begin() }
     .alert("Microphone needed", isPresented: $model.permissionDenied) {
-      Button("OK") { router.navigate(to: .companion) }
+      Button("OK") { endCall() }
     } message: {
       Text("Enable microphone access in Settings to talk with Sonia. (The Simulator has no microphone — run on a device for live voice.)")
     }
   }
 
-  // MARK: - Right-side glass control rail
+  // MARK: - Top name chip
 
-  private var controlRail: some View {
-    VStack(spacing: SRSpacing.s12) {
-      SRGlassIconButton(systemName: micIcon, emphasis: .prominent,
-                        accessibilityLabel: "Tap to speak",
-                        foregroundColor: micTint) { model.toggleMic() }
-      SRGlassIconButton(systemName: "text.bubble", accessibilityLabel: "Captions",
-                        foregroundColor: SRColor.textPrimary) {}
-      SRGlassIconButton(systemName: "square.and.arrow.up", accessibilityLabel: "Share",
-                        foregroundColor: SRColor.textPrimary) {}
-      SRGlassIconButton(systemName: "gearshape", accessibilityLabel: "Settings",
-                        foregroundColor: SRColor.textPrimary) { router.present(sheet: .settings) }
+  private var nameChip: some View {
+    SRText("Sonia", style: .controlLabel)
+      .padding(.horizontal, SRSpacing.s16)
+      .padding(.vertical, SRSpacing.s8)
+      .glassCapsule()
+  }
+
+  // MARK: - Bottom controls
+
+  private var controlBar: some View {
+    HStack {
+      endCallButton
+      Spacer()
+      HStack(spacing: SRSpacing.s16) {
+        SRGlassIconButton(
+          systemName: model.isMuted ? "mic.slash.fill" : "mic.fill",
+          accessibilityLabel: model.isMuted ? "Unmute" : "Mute",
+          foregroundColor: model.isMuted ? SRColor.feedbackDangerText : SRColor.textPrimary
+        ) { model.toggleMute() }
+
+        SRGlassIconButton(
+          systemName: model.isSpeakerOn ? "speaker.wave.2.fill" : "speaker.slash.fill",
+          accessibilityLabel: "Speaker",
+          foregroundColor: SRColor.textPrimary
+        ) { model.toggleSpeaker() }
+      }
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
-    .padding(.trailing, SRSpacing.s16)
+  }
+
+  private var endCallButton: some View {
+    Button(action: endCall) {
+      ZStack {
+        Circle()
+          .fill(SRColor.feedbackDangerText)
+          .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
+        Image(systemName: "phone.down.fill")
+          .font(.system(size: 24, weight: .semibold))
+          .foregroundStyle(.white)
+      }
+      .frame(width: 64, height: 64)
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel("End call")
+  }
+
+  private func endCall() {
+    model.end()
+    router.navigate(to: .companion)
   }
 
   // MARK: - Live caption
@@ -77,9 +103,8 @@ struct SessionView: View {
     }
   }
 
-  /// The whole sentence laid out once; spoken words sit at full strength, the rest stay
-  /// dim. Because every word is present from the start, the layout never reflows — words
-  /// just light up in place.
+  /// The whole sentence laid out once; spoken words sit at full strength, the rest dim —
+  /// so the layout never reflows, words just light up in place.
   private var karaokeCaption: Text {
     let words = model.captionWords
     let revealed = model.revealedWordCount
@@ -97,6 +122,7 @@ struct SessionView: View {
     case .connecting:
       return "Connecting…"
     case .listening:
+      if model.isMuted { return "Muted" }
       return model.liveCaption.isEmpty ? "Listening…" : model.liveCaption
     case .thinking:
       return model.liveCaption.isEmpty ? "…" : model.liveCaption
@@ -108,16 +134,17 @@ struct SessionView: View {
       return model.transcript.last?.text ?? SoniaSystemPrompt.introduction
     }
   }
+}
 
-  private var micIcon: String {
-    switch model.state {
-    case .listening: return "stop.fill"
-    case .speaking, .thinking: return "waveform"
-    default: return "hand.tap.fill"
+// MARK: - Glass capsule helper
+
+private extension View {
+  @ViewBuilder
+  func glassCapsule() -> some View {
+    if #available(iOS 26.0, *) {
+      glassEffect(.regular, in: Capsule(style: .continuous))
+    } else {
+      background(.ultraThinMaterial, in: Capsule(style: .continuous))
     }
-  }
-
-  private var micTint: Color {
-    model.state == .listening ? SRColor.brandAccent : SRColor.textPrimary
   }
 }

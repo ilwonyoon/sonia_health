@@ -224,6 +224,11 @@ final class AudioSessionController {
     playerNode.stop()
   }
 
+  /// Routes call audio to the loudspeaker (true) or the earpiece/receiver (false).
+  func setSpeaker(_ on: Bool) {
+    try? AVAudioSession.sharedInstance().overrideOutputAudioPort(on ? .speaker : .none)
+  }
+
   // MARK: - Teardown
 
   func teardown() {
