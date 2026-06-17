@@ -46,8 +46,7 @@ struct MainTabView: View {
         .tag(Tab.content)
         .tabItem { Label("Content", systemImage: "book.fill") }
 
-      TabPlaceholderView(title: "You", systemImage: "person.fill",
-                         message: "Your profile and progress are coming soon.")
+      NotificationsView()
         .tag(Tab.you)
         .tabItem { Label("You", systemImage: "person.fill") }
 

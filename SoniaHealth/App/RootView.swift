@@ -58,7 +58,9 @@ private struct SplashView: View {
     switch raw {
     case "home": return .home
     case "companion": return .companion
+    case "chat": return .chat
     case "content": return .content
+    case "you": return .you
     case "morning": return .checkin(.morningIntention)
     case "evening": return .checkin(.eveningReflection)
     case "session": return .session
