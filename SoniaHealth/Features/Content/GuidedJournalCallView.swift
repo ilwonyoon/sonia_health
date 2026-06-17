@@ -57,14 +57,8 @@ struct GuidedJournalCallView: View {
   // MARK: Top bar
 
   private var topBar: some View {
-    HStack {
-      SRText(title, style: .controlLabel)
-      Spacer()
-      if vm.phase != .ended {
-        Text("Question \(min(vm.index + 1, vm.total)) of \(vm.total)")
-          .font(.system(size: 13)).foregroundStyle(SRColor.textTertiary)
-      }
-    }
+    SRText(title, style: .navigationTitle)
+      .frame(maxWidth: .infinity, alignment: .center)
   }
 
   // MARK: Caption

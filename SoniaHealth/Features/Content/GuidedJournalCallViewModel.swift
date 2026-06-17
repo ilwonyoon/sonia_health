@@ -78,6 +78,11 @@ final class GuidedJournalCallViewModel: ObservableObject {
     audio.setSpeaker(false)
     UIDevice.current.isProximityMonitoringEnabled = true   // screen off when held to ear
 
+    // Strong "connected" haptic — like a call being answered the moment it's at your ear.
+    let connect = UIImpactFeedbackGenerator(style: .heavy)
+    connect.prepare()
+    connect.impactOccurred(intensity: 1.0)
+
     startCountdown()
 
     let q1 = await GuidedJournalPrefetcher.shared.firstQuestion(
