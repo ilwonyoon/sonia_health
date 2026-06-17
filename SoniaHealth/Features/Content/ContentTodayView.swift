@@ -32,6 +32,13 @@ struct ContentTodayView: View {
       }
     }
     .task { await warmGuidedJournals() }
+    .overlay(alignment: .bottomTrailing) {
+      #if DEBUG
+      GuidedJournalDemoControls()
+        .padding(.trailing, SRSpacing.s16)
+        .padding(.bottom, SRSpacing.s24)
+      #endif
+    }
   }
 
   /// Brief req #1: have Q1 ready before the user opens an entry. When the Today page

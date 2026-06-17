@@ -49,4 +49,11 @@ final class GuidedJournalPrefetcher {
     cache[k] = value
     return value
   }
+
+  /// Demo/testing: drop all cached + in-flight first questions so they regenerate fresh.
+  func reset() {
+    inFlight.values.forEach { $0.cancel() }
+    inFlight.removeAll()
+    cache.removeAll()
+  }
 }
