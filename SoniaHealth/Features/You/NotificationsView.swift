@@ -10,14 +10,17 @@ struct NotificationsView: View {
     let id = UUID()
     let kind: JournalCheckinKind
     let time: String
+    let title: String     // verb-form, like "Claude responded" — what Sonia did
     let message: String
   }
 
   // Sonia-voiced, context-anchored. Tapping routes into the guided journal.
   private let notices: [Notice] = [
     .init(kind: .morningIntention, time: "7:02 AM",
+          title: "Sonia checked in",
           message: "Good morning, Sarah. Let's take a minute to set today's intention together before the day picks up."),
     .init(kind: .eveningReflection, time: "9:14 PM",
+          title: "Sonia reached out",
           message: "Winding down? When you're ready, let's look back on today — the callback week's a lot to hold.")
   ]
 
@@ -50,7 +53,7 @@ struct NotificationsView: View {
       appMark
       VStack(alignment: .leading, spacing: SRSpacing.s2) {
         HStack(alignment: .firstTextBaseline) {
-          SRText("Sonia", style: .bodyEmphasis)
+          SRText(notice.title, style: .bodyEmphasis)
           Spacer()
           Text(notice.time)
             .font(.system(size: 12))
