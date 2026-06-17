@@ -81,6 +81,22 @@ enum SRColor {
   static let feedbackDangerBackground = Color(light: Color(hex: 0xFCEBEB), dark: Color(hex: 0x501313))
   static let feedbackDangerText = Color(light: Color(hex: 0x791F1F), dark: Color(hex: 0xF7C1C1))
   static let feedbackDangerBorder = Color(light: Color(hex: 0xF09595), dark: Color(hex: 0xA32D2D))
+
+  // MARK: - Sonia accents (time-of-day / flow system)
+  // Sampled from the real Sonia app screenshots. The accent is a *runtime* variable
+  // keyed to context (morning / evening / assessment / companion), not a fixed brand
+  // color. See docs/design-system/foundations.md and themes.md.
+  static let accentMorning = Color(light: Color(hex: 0xC9A24B), dark: Color(hex: 0xD6B25E))
+  static let accentEvening = Color(light: Color(hex: 0xB7A9D6), dark: Color(hex: 0xC6BAE2))
+  static let accentAssessment = Color(light: Color(hex: 0xF4F2ED), dark: .white)
+  static let accentAssessmentTrack = Color(hex: 0xE7E0CF)
+  static let accentReward = Color(hex: 0x3E9C6B)
+  static let accentRewardBackground = Color(hex: 0x3E9C6B, alpha: 0.18)
+
+  /// Dark text used on a light accent CTA (gold / cream / white fills).
+  static let textOnAccent = Color(hex: 0x1A1407)
+  /// Foreground used over full-bleed companion photography.
+  static let textOnPhoto = Color.white
 }
 
 enum SRRoutineHeroPalette: String, CaseIterable, Equatable, Codable {

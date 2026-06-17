@@ -13,8 +13,15 @@ enum SRTextStyle {
   case controlLabel
   case caption
 
-  @available(*, deprecated, renamed: "screenTitle")
-  static var display: Self { .screenTitle }
+  // MARK: Sonia serif display layer (see docs/design-system/foundations.md)
+  /// 32 serif bold — "Calm First", "Daily Affirmation".
+  case display
+  /// 26 serif regular — routine / assessment questions.
+  case questionTitle
+  /// 20 serif italic — pull-quotes.
+  case quote
+  /// 12 sans medium, tracked — uppercase eyebrows ("QUESTION 1 OF 3").
+  case eyebrow
 
   @available(*, deprecated, renamed: "sectionTitle")
   static var headline: Self { .sectionTitle }
@@ -52,6 +59,14 @@ enum SRTextStyle {
       return .system(size: 13, weight: .medium, design: .default)
     case .caption:
       return .system(size: 12, weight: .regular, design: .default)
+    case .display:
+      return .system(size: 32, weight: .bold, design: .serif)
+    case .questionTitle:
+      return .system(size: 26, weight: .regular, design: .serif)
+    case .quote:
+      return .system(size: 20, weight: .regular, design: .serif).italic()
+    case .eyebrow:
+      return .system(size: 12, weight: .medium, design: .default)
     }
   }
 
@@ -68,6 +83,14 @@ enum SRTextStyle {
     case .controlLabel:
       return 13
     case .caption:
+      return 12
+    case .display:
+      return 32
+    case .questionTitle:
+      return 26
+    case .quote:
+      return 20
+    case .eyebrow:
       return 12
     }
   }
@@ -87,8 +110,8 @@ enum SRTextStyle {
 
   var tracking: CGFloat {
     switch self {
-    case .caption:
-      return 0
+    case .eyebrow:
+      return 1.0  // ~8% of 12pt — uppercase eyebrow tracking
     default:
       return 0
     }
