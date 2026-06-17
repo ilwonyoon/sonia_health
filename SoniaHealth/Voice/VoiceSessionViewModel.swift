@@ -43,6 +43,10 @@ final class VoiceSessionViewModel: ObservableObject {
   private var firstName: String?
   private var timezoneIdentifier: String?
 
+  // MARK: Accumulating memory (Phase 2 — write path)
+  private var journal = MemoryJournal.empty
+  private var todayString = MemoryConsolidator.todayISO()
+
   // MARK: - Lifecycle
 
   func begin() async {
@@ -88,7 +92,11 @@ final class VoiceSessionViewModel: ObservableObject {
     }
     firstName = seed.user.firstName
     timezoneIdentifier = seed.user.timezone
-    let context = SoniaMemoryContext.build(from: seed)
+    todayString = seed.meta.today.isEmpty
+      ? MemoryConsolidator.todayISO(timezoneIdentifier: seed.user.timezone)
+      : seed.meta.today
+    journal = MemoryStore.load()
+    let context = SoniaMemoryContext.build(from: seed, journal: journal)
     memory = context
     baseSystemPrompt = SoniaSystemPrompt.text + "\n\n" + context.systemContext
     systemPrompt = baseSystemPrompt
@@ -98,6 +106,19 @@ final class VoiceSessionViewModel: ObservableObject {
     currentSTT?.close()
     currentTTS?.cancel()
     audio.teardown()
+
+    // Consolidate this conversation into durable memory in the background, so today's
+    // session shows up in tomorrow's context. Detached + value-captured so it survives
+    // this view model being torn down on navigation. Best-effort: failures are silent.
+    let snapshot = history
+    guard snapshot.contains(where: { $0.role == .user }) else { return }
+    let consolidator = MemoryConsolidator(claude: claude)
+    let currentJournal = journal
+    let day = todayString
+    Task.detached {
+      let updated = await consolidator.consolidate(history: snapshot, into: currentJournal, today: day)
+      MemoryStore.save(updated)
+    }
   }
 
   // MARK: - Turn control

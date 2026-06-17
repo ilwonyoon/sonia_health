@@ -1,13 +1,17 @@
 import Foundation
 
 /// Turns the generic Sonia prompt into a therapist who remembers THIS person across
-/// daily sessions (Phase 1 — read path).
+/// daily sessions.
 ///
-/// Assembles a bounded context block from the seed/memory so injection size stays
-/// roughly constant no matter how many days the user has been active:
+/// Merges two sources:
+///   • the static seed (`SeedRoot`)   — fixed persona backstory + demo history
+///   • the live journal (`MemoryJournal`) — what Sonia has learned in real sessions
+///
+/// and assembles a bounded context block so injection size stays roughly constant no
+/// matter how many days the user has been active:
 ///   1. Profile (stable)              — always included
-///   2. Insights / long-term patterns — always included (already distilled)
-///   3. Recent session summaries      — only the most recent `recentSessionCount`
+///   2. Insights / long-term patterns — seed + journal-learned, always included
+///   3. Recent session summaries      — most recent `recentSessionCount` across both
 ///   4. Where-things-stand + continuity — last mood, latest GAD-7, open thread
 ///
 /// `systemContext` is appended after `SoniaSystemPrompt.text`; `continuity` is the
@@ -19,14 +23,50 @@ struct SoniaMemoryContext: Equatable {
   /// Most-recent session summaries to inject. Older ones live on in the insights.
   static let recentSessionCount = 5
 
-  static func build(from seed: SeedRoot) -> SoniaMemoryContext {
+  /// One unified recent-session row drawn from either the seed or the live journal.
+  private struct RecentItem {
+    let date: String
+    let label: String
+    let gist: String
+    let moodLabel: String?
+    let moodScore: Int?
+  }
+
+  static func build(from seed: SeedRoot, journal: MemoryJournal = .empty) -> SoniaMemoryContext {
     let user = seed.user
 
-    let recent = seed.sessions
-      .sorted { $0.startedAt > $1.startedAt }
+    // Merge seed sessions + live journal entries into one recency-ranked list.
+    let seedItems = seed.sessions.map { session in
+      RecentItem(
+        date: shortDate(session.startedAt),
+        label: label(for: session.kind),
+        gist: gist(of: session),
+        moodLabel: session.moodAfter?.label,
+        moodScore: session.moodAfter?.score
+      )
+    }
+    let journalItems = journal.entries.map { entry in
+      RecentItem(
+        date: shortDate(entry.date),
+        label: "check-in",
+        gist: gist(of: entry),
+        moodLabel: entry.moodAfterLabel,
+        moodScore: entry.moodAfterScore
+      )
+    }
+    let recent = (seedItems + journalItems)
+      .sorted { $0.date > $1.date }
       .prefix(recentSessionCount)
-    let lastSession = recent.first
+    let lastItem = recent.first
     let latestGAD = seed.assessments(ofType: "GAD-7").last
+
+    // Insights: seed-distilled + journal-learned.
+    let insights: [(title: String, body: String)] =
+      seed.insights.map { ($0.title, $0.body) } +
+      journal.learnedInsights.map { ($0.title, $0.body) }
+
+    // Open thread: prefer the freshest source.
+    let openThread = journal.continuity ?? seedOpenThread(seed)
 
     // MARK: system context block
     var lines: [String] = []
@@ -42,10 +82,10 @@ struct SoniaMemoryContext: Equatable {
       lines.append("What they're working toward: \(user.goals.joined(separator: "; ")).")
     }
 
-    if seed.insights.isEmpty == false {
+    if insights.isEmpty == false {
       lines.append("")
       lines.append("## PATTERNS YOU'VE NOTICED TOGETHER")
-      for insight in seed.insights {
+      for insight in insights {
         lines.append("- \(insight.title): \(insight.body)")
       }
     }
@@ -53,20 +93,20 @@ struct SoniaMemoryContext: Equatable {
     if recent.isEmpty == false {
       lines.append("")
       lines.append("## RECENT SESSIONS (most recent first)")
-      for session in recent {
-        lines.append("- \(shortDate(session.date)) \(label(for: session.kind)): \(gist(of: session))")
+      for item in recent {
+        lines.append("- \(item.date) \(item.label): \(item.gist)")
       }
     }
 
     lines.append("")
     lines.append("## WHERE THINGS STAND NOW")
-    if let last = lastSession, let mood = last.moodAfter {
-      lines.append("- Last check-in was \(shortDate(last.date)); they ended around \(mood.label.lowercased()) (\(mood.score) out of 10).")
+    if let last = lastItem, let moodLabel = last.moodLabel, let moodScore = last.moodScore {
+      lines.append("- Last check-in was \(last.date); they ended around \(moodLabel.lowercased()) (\(moodScore) out of 10).")
     }
     if let gad = latestGAD {
       lines.append("- Most recent GAD-7 score: \(gad.score) (\(gad.severity)), on \(shortDate(gad.date)).")
     }
-    if let open = openThread(from: lastSession) {
+    if let open = openThread {
       lines.append("- An open thread to gently follow up on: \(open)")
     }
     lines.append("")
@@ -76,13 +116,13 @@ struct SoniaMemoryContext: Equatable {
 
     // MARK: continuity (for the opening line)
     var cont: [String] = ["First name: \(user.firstName)."]
-    if let last = lastSession {
-      cont.append("Last check-in: \(shortDate(last.date)), a \(label(for: last.kind)).")
-      if let mood = last.moodAfter {
-        cont.append("They ended that one feeling \(mood.label.lowercased()) (\(mood.score) out of 10).")
+    if let last = lastItem {
+      cont.append("Last check-in: \(last.date), a \(last.label).")
+      if let moodLabel = last.moodLabel, let moodScore = last.moodScore {
+        cont.append("They ended that one feeling \(moodLabel.lowercased()) (\(moodScore) out of 10).")
       }
     }
-    if let open = openThread(from: lastSession) {
+    if let open = openThread {
       cont.append("What you suggested they carry forward: \(open)")
     }
     let continuity = cont.joined(separator: " ")
@@ -109,10 +149,18 @@ struct SoniaMemoryContext: Equatable {
     return parts.joined(separator: " ")
   }
 
-  private static func openThread(from session: Session?) -> String? {
-    guard let session else { return nil }
-    if let homework = session.homework, homework.isEmpty == false { return homework }
-    if let action = session.actionItem, action.isEmpty == false { return action }
+  private static func gist(of entry: MemoryJournal.Entry) -> String {
+    var parts = [entry.summary]
+    if let homework = entry.homework, homework.isEmpty == false {
+      parts.append("Homework: \(homework)")
+    }
+    return parts.joined(separator: " ")
+  }
+
+  private static func seedOpenThread(_ seed: SeedRoot) -> String? {
+    guard let last = seed.sessions.sorted(by: { $0.startedAt > $1.startedAt }).first else { return nil }
+    if let homework = last.homework, homework.isEmpty == false { return homework }
+    if let action = last.actionItem, action.isEmpty == false { return action }
     return nil
   }
 

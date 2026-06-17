@@ -16,7 +16,9 @@ final class ClaudeClient {
   private let session = URLSession(configuration: .default)
 
   /// Sends the conversation and returns Sonia's reply text.
-  func reply(system: String, history: [Turn]) async throws -> String {
+  /// `maxTokens` defaults to the short conversational cap; raise it for tasks that
+  /// need longer output (e.g. memory consolidation JSON).
+  func reply(system: String, history: [Turn], maxTokens: Int = AnthropicConfig.maxTokens) async throws -> String {
     var request = URLRequest(url: AnthropicConfig.endpoint)
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -26,7 +28,7 @@ final class ClaudeClient {
     let messages = history.map { ["role": $0.role.rawValue, "content": $0.text] }
     let body: [String: Any] = [
       "model": AnthropicConfig.model,
-      "max_tokens": AnthropicConfig.maxTokens,
+      "max_tokens": maxTokens,
       "system": system,
       "messages": messages
     ]
