@@ -94,21 +94,28 @@ struct GuidedJournalQuestionGenerator {
     let followUp: String
     if isMorning {
       if step == 0 {
-        position = "BEAT 1 — Open. Simply ask what's on their mind, or how they're feeling as the day begins. Keep it pure and low-pressure; do NOT mention goals, tasks, or yesterday yet."
+        position = """
+          BEAT 1 — Open. Warmly greet them and frame this as a quick moment together — just a \
+          couple of minutes before the day picks up — then ask what's on their mind, or how they're \
+          feeling as the day begins. Low-pressure; do NOT mention goals, tasks, or yesterday yet.
+          """
         followUp = ""
       } else if step >= questionCount - 1 {
         position = """
-          BEAT 3 — Reinforce. Name the SPECIFIC action they last committed to (the open thread \
-          under 'WHERE THINGS STAND NOW' below — e.g. a phrase to use, a breath to take). Say it \
-          concretely, tie it to today, and gently ask them to keep it close. This one behavior is \
-          the point of the whole check-in.
+          BEAT 3 — Acknowledge, then reinforce. FIRST, in one short warm sentence, reflect back \
+          what they just shared so they feel heard. THEN name the SPECIFIC action they last \
+          committed to (the open thread under 'WHERE THINGS STAND NOW' below — e.g. a phrase to \
+          use, a breath to take), tie it to today, and ask them to keep it close — gently noting \
+          you've only got this short moment now and you'll carry it with them. This one behavior \
+          is the point of the check-in.
           """
         followUp = followUpText
       } else {
         position = """
-          BEAT 2 — Nudge the goal + listen. Reflect the feeling in what they just said, then gently \
-          connect it to the goal you've been working on together (from your memory below). Curious \
-          and supportive, not prescriptive.
+          BEAT 2 — Acknowledge, then nudge. FIRST, in one short warm sentence, reflect back what \
+          they just said so they feel genuinely heard. THEN gently connect it to the goal you've \
+          been working on together (from your memory below). Curious and supportive, not \
+          prescriptive.
           """
         followUp = followUpText
       }
@@ -169,10 +176,9 @@ struct GuidedJournalQuestionGenerator {
 
   private static func clean(_ raw: String) -> String {
     var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-    // Take the first non-empty line; models occasionally add a trailing note.
-    if let firstLine = text.split(separator: "\n").first.map(String.init) {
-      text = firstLine.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
+    // Sonia's turn may be a short reflection + a question — keep both; just collapse any
+    // line breaks into one spoken paragraph.
+    text = text.replacingOccurrences(of: #"\s*\n+\s*"#, with: " ", options: .regularExpression)
     // Strip wrapping quotes and any leading "1." style numbering.
     text = text.trimmingCharacters(in: CharacterSet(charactersIn: "\"'“”"))
     if let range = text.range(of: #"^\s*\d+[\.\)]\s*"#, options: .regularExpression) {
