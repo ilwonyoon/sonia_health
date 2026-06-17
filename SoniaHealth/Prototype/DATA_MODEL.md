@@ -53,7 +53,7 @@ SeedRoot
 ## voices[] (TherapistVoice)
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| id | string | "voice_aria" 등 |
+| id | string | "voice_skylar" 등 |
 | name | string | 표시 이름 |
 | gender | "female"\|"male"\|"nonbinary" | |
 | ageRange | string | "30s" 등 |

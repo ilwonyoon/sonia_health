@@ -50,7 +50,7 @@
 - **아침 체크인** (~3–5분, 주로 **텍스트** — 침대에서 빠르게): 기분 점검 → 오늘 불안 예보 → 의도 설정 → 가끔 호흡
 - **저녁 체크인** (~5–8분, 주로 **음성** — 하루 마무리): 하루 회고 → 잘된 것/힘든 것 → 생각 리프레이밍 → 와인드다운
 - **딥 세션** (~20–25분, **음성**): 큰 일이 있을 때만 (면접 준비, 가족과 힘든 통화)
-- 선택한 보이스: **Aria** (따뜻한 30대 여성, grounding 스타일)
+- 선택한 보이스: **Skylar** (따뜻한 미국 여성, grounding 스타일 — Cartesia "Skylar - Friendly Guide")
 
 ### 사용 기법 (CBT/ACT)
 thought reframing(인지 재구성), cognitive distortion labeling, values clarification(ACT),
