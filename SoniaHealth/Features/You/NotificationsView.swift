@@ -35,7 +35,7 @@ struct NotificationsView: View {
             .padding(.horizontal, SRSpacing.s4)
 
           ForEach(notices) { notice in
-            Button { router.navigate(to: .checkin(notice.kind)) } label: {
+            Button { router.navigate(to: .journalStart(notice.kind)) } label: {
               noticeRow(notice)
             }
             .buttonStyle(.plain)

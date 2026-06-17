@@ -63,13 +63,19 @@ final class AudioSessionController {
 
   /// Brings up the persistent full-duplex graph once for the whole call. Safe to call
   /// repeatedly — it no-ops once started.
-  func start() throws {
+  ///
+  /// `defaultToSpeaker` (true) routes to the loudspeaker — the companion "speakerphone"
+  /// session. Pass `false` for an earpiece/receiver call (the guided-journal "to your ear"
+  /// flow); without `.defaultToSpeaker` in the category, `overrideOutputAudioPort(.none)`
+  /// resolves to the receiver.
+  func start(defaultToSpeaker: Bool = true) throws {
     guard isStarted == false else { return }
 
     let session = AVAudioSession.sharedInstance()
     // `.allowBluetooth` was renamed to `.allowBluetoothHFP` in iOS 26; reference only the
     // new name (gated) so there's no deprecation warning and BT headset mic still works.
-    var options: AVAudioSession.CategoryOptions = [.defaultToSpeaker, .allowBluetoothA2DP]
+    var options: AVAudioSession.CategoryOptions = [.allowBluetoothA2DP]
+    if defaultToSpeaker { options.insert(.defaultToSpeaker) }
     if #available(iOS 26.0, *) {
       options.insert(.allowBluetoothHFP)
     }
