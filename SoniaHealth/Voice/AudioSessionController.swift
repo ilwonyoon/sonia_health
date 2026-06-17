@@ -1,15 +1,25 @@
 import AVFoundation
 import Foundation
 
-/// Owns the AVAudioEngine: captures mic audio as 16 kHz mono PCM-S16LE for STT
-/// and plays back 24 kHz PCM-S16LE TTS audio. Half-duplex (tap-to-talk) for the prototype.
+/// Owns one persistent full-duplex audio graph for a voice session.
+///
+/// Why persistent + single-category: the previous design started the engine under
+/// `.playback` (output-only) for the greeting, then switched the session to
+/// `.playAndRecord` for listening WITHOUT rebuilding the engine. That leaves
+/// `inputNode` wired to the old output-only route, so the mic tap silently captures
+/// nothing — Sonia is heard, but the user can't be. Apple's guidance: configure
+/// `.playAndRecord` once, start the engine once, and keep it up for the whole call.
+///
+/// Voice-Processing I/O (`setVoiceProcessingEnabled`) adds hardware echo cancellation
+/// and AGC, so the mic ignores the TTS coming out of the speaker — what lets the user
+/// talk naturally during/right after Sonia without feedback.
 final class AudioSessionController {
-  enum AudioError: Error { case converterUnavailable, formatUnavailable }
+  enum AudioError: Error { case engineUnavailable, formatUnavailable, converterUnavailable }
 
   private let engine = AVAudioEngine()
   private let playerNode = AVAudioPlayerNode()
 
-  /// 16 kHz mono Int16 interleaved — the STT input format.
+  /// 16 kHz mono Int16 — the STT input format Cartesia expects.
   private let captureFormat = AVAudioFormat(
     commonFormat: .pcmFormatInt16,
     sampleRate: CartesiaConfig.inputSampleRate,
@@ -17,7 +27,7 @@ final class AudioSessionController {
     interleaved: true
   )!
 
-  /// 24 kHz mono Float32 — the playback rendering format.
+  /// 24 kHz mono Float32 — the TTS playback rendering format.
   private let playbackFormat = AVAudioFormat(
     commonFormat: .pcmFormatFloat32,
     sampleRate: CartesiaConfig.outputSampleRate,
@@ -26,7 +36,8 @@ final class AudioSessionController {
   )!
 
   private var captureConverter: AVAudioConverter?
-  private var isEngineRunning = false
+  private var isStarted = false
+  private var isCapturing = false
 
   /// Total audio (seconds) scheduled for playback since the last `resetPlaybackClock()`.
   /// The TTS WebSocket delivers audio faster than realtime, so the session uses this to
@@ -35,10 +46,10 @@ final class AudioSessionController {
 
   /// Called with each captured 16 kHz Int16 chunk while listening.
   var onCapture: ((Data) -> Void)?
-  /// Approximate input level (0...1) for UI feedback.
+  /// Approximate input level (0...1) for UI feedback + silence detection.
   var onInputLevel: ((Float) -> Void)?
 
-  // MARK: - Session
+  // MARK: - Permission
 
   func requestPermission() async -> Bool {
     await withCheckedContinuation { continuation in
@@ -48,57 +59,71 @@ final class AudioSessionController {
     }
   }
 
-  private var isRecordingSession = false
+  // MARK: - Lifecycle
 
-  /// Activates the audio session. Playback uses `.playback` (no microphone prompt);
-  /// only recording switches to `.playAndRecord`, so the mic permission alert is
-  /// deferred until the user actually taps to speak.
-  private func configureSession(recording: Bool) throws {
+  /// Brings up the persistent full-duplex graph once for the whole call. Safe to call
+  /// repeatedly — it no-ops once started.
+  func start() throws {
+    guard isStarted == false else { return }
+
     let session = AVAudioSession.sharedInstance()
-    if recording {
-      try session.setCategory(
-        .playAndRecord,
-        mode: .voiceChat,
-        options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP]
-      )
-    } else {
-      try session.setCategory(.playback, mode: .spokenAudio, options: [])
-    }
+    try session.setCategory(
+      .playAndRecord,
+      mode: .voiceChat,
+      options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP]
+    )
     try session.setActive(true, options: [])
-    isRecordingSession = recording
-  }
 
-  private func startEngineIfNeeded(recording: Bool) throws {
-    if recording, !isRecordingSession {
-      try configureSession(recording: true)  // upgrade to record before tapping input
+    // Voice-Processing I/O: echo cancellation + AGC. Enabling it on the input node also
+    // enables it on the output node. Best-effort — plain duplex still works without it.
+    do {
+      try engine.inputNode.setVoiceProcessingEnabled(true)
+    } catch {
+      print("[Audio] voice processing unavailable: \(error)")
     }
-    guard isEngineRunning == false else { return }
-    try configureSession(recording: recording)
 
-    if engine.attachedNodes.contains(playerNode) == false {
-      engine.attach(playerNode)
-      engine.connect(playerNode, to: engine.mainMixerNode, format: playbackFormat)
-    }
+    engine.attach(playerNode)
+    engine.connect(playerNode, to: engine.mainMixerNode, format: playbackFormat)
+    _ = engine.inputNode  // instantiate the input so the graph wires the mic in
 
     engine.prepare()
     try engine.start()
-    isEngineRunning = true
+    isStarted = true
+
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(handleConfigurationChange),
+      name: .AVAudioEngineConfigurationChange,
+      object: engine
+    )
+  }
+
+  /// Route/format changes (and enabling voice processing) can stop the engine; bring it
+  /// back and re-arm the mic tap so capture survives.
+  @objc private func handleConfigurationChange() {
+    guard isStarted else { return }
+    let wasCapturing = isCapturing
+    if engine.isRunning == false { try? engine.start() }
+    if wasCapturing { try? installInputTap() }
   }
 
   // MARK: - Capture (mic -> STT)
 
   func startCapturing() throws {
-    try startEngineIfNeeded(recording: true)
+    if isStarted == false { try start() }
+    guard engine.isRunning else { throw AudioError.engineUnavailable }
+    try installInputTap()
+    isCapturing = true
+  }
 
+  private func installInputTap() throws {
     let input = engine.inputNode
     let hardwareFormat = input.outputFormat(forBus: 0)
 
-    // Guard against an invalid input format (e.g. Simulator with no microphone),
-    // which would make installTap(onBus:) raise an Obj-C exception and crash.
+    // Invalid input format (no usable mic route) — surface instead of crashing in the tap.
     guard hardwareFormat.sampleRate > 0, hardwareFormat.channelCount > 0 else {
       throw AudioError.formatUnavailable
     }
-
     guard let converter = AVAudioConverter(from: hardwareFormat, to: captureFormat) else {
       throw AudioError.converterUnavailable
     }
@@ -106,17 +131,20 @@ final class AudioSessionController {
 
     input.removeTap(onBus: 0)
     input.installTap(onBus: 0, bufferSize: 4_096, format: hardwareFormat) { [weak self] buffer, _ in
-      self?.handleCaptured(buffer: buffer, hardwareFormat: hardwareFormat)
+      self?.handleCaptured(buffer: buffer)
     }
   }
 
   func stopCapturing() {
+    guard isCapturing else { return }
     engine.inputNode.removeTap(onBus: 0)
     captureConverter = nil
+    isCapturing = false
   }
 
-  private func handleCaptured(buffer: AVAudioPCMBuffer, hardwareFormat: AVAudioFormat) {
+  private func handleCaptured(buffer: AVAudioPCMBuffer) {
     guard let converter = captureConverter else { return }
+    let hardwareFormat = buffer.format
 
     let ratio = captureFormat.sampleRate / hardwareFormat.sampleRate
     let capacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio + 1_024)
@@ -157,11 +185,11 @@ final class AudioSessionController {
 
   // MARK: - Playback (TTS -> speaker)
 
-  func startPlayback() throws {
-    try startEngineIfNeeded(recording: false)
-    if playerNode.isPlaying == false {
-      playerNode.play()
-    }
+  /// Starts the player node. The engine is already running (see `start()`), so this just
+  /// kicks playback off when the first TTS chunk is enqueued.
+  func startPlayback() {
+    guard isStarted else { return }
+    if playerNode.isPlaying == false { playerNode.play() }
   }
 
   /// Resets the scheduled-playback duration at the start of each spoken utterance.
@@ -197,10 +225,14 @@ final class AudioSessionController {
   // MARK: - Teardown
 
   func teardown() {
+    NotificationCenter.default.removeObserver(
+      self, name: .AVAudioEngineConfigurationChange, object: engine
+    )
     stopCapturing()
     playerNode.stop()
     engine.stop()
-    isEngineRunning = false
+    isStarted = false
+    try? engine.inputNode.setVoiceProcessingEnabled(false)
     try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
   }
 }
