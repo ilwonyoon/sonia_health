@@ -1,0 +1,14 @@
+# Secrets
+SoniaHealth/Config/Secrets.xcconfig
+
+# Xcode / build
+*.xcodeproj
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+.DS_Store
+
+# SPM
+.build/
+.swiftpm/

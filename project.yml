@@ -1,0 +1,44 @@
+name: SoniaHealth
+options:
+  bundleIdPrefix: com.ilwonyoon
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+  minimumXcodeGenVersion: "2.38.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_LANGUAGE: en
+    SWIFT_STRICT_CONCURRENCY: minimal
+
+# Secrets (API keys) live in Config/Secrets.xcconfig (gitignored).
+# Copy Config/Secrets.example.xcconfig -> Config/Secrets.xcconfig and fill in keys.
+configFiles:
+  Debug: SoniaHealth/Config/Secrets.xcconfig
+  Release: SoniaHealth/Config/Secrets.xcconfig
+
+targets:
+  SoniaHealth:
+    type: application
+    platform: iOS
+    sources:
+      - path: SoniaHealth
+        excludes:
+          - "Config/*.xcconfig"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ilwonyoon.SoniaHealth
+        PRODUCT_NAME: Sonia
+        INFOPLIST_FILE: SoniaHealth/Resources/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1"
+        ENABLE_USER_SCRIPT_SANDBOXING: "YES"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: "NO"
+        SDKROOT: iphoneos
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        SUPPORTS_MACCATALYST: "NO"
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: "NO"
