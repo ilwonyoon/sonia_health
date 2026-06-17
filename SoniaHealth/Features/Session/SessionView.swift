@@ -63,11 +63,33 @@ struct SessionView: View {
 
   // MARK: - Live caption
 
+  @ViewBuilder
   private var caption: some View {
-    SRText(captionText, style: .sectionTitleMedium, tone: .primary)
-      .multilineTextAlignment(.center)
-      .frame(maxWidth: .infinity, alignment: .center)
-      .animation(.easeInOut(duration: 0.2), value: captionText)
+    if model.state == .speaking, model.captionWords.isEmpty == false {
+      karaokeCaption
+        .frame(maxWidth: .infinity, alignment: .center)
+        .animation(.easeOut(duration: 0.28), value: model.revealedWordCount)
+    } else {
+      SRText(captionText, style: .sectionTitleMedium, tone: .primary)
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity, alignment: .center)
+        .animation(.easeInOut(duration: 0.2), value: captionText)
+    }
+  }
+
+  /// The whole sentence laid out once; spoken words sit at full strength, the rest stay
+  /// dim. Because every word is present from the start, the layout never reflows — words
+  /// just light up in place.
+  private var karaokeCaption: Text {
+    let words = model.captionWords
+    let revealed = model.revealedWordCount
+    return words.indices.reduce(Text("")) { line, i in
+      let token = i == 0 ? words[i] : " " + words[i]
+      let lit = i < revealed
+      return line + Text(token)
+        .foregroundColor(lit ? SRColor.textPrimary : SRColor.textPrimary.opacity(0.25))
+    }
+    .font(.system(size: 17, weight: .semibold))
   }
 
   private var captionText: String {

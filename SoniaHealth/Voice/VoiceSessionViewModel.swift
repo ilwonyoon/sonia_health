@@ -28,6 +28,11 @@ final class VoiceSessionViewModel: ObservableObject {
   /// Word-by-word caption that updates live as the user speaks (STT interim) and as
   /// Sonia speaks (TTS word timestamps synced to playback).
   @Published private(set) var liveCaption: String = ""
+  /// Karaoke caption for Sonia's turn: the full spoken sentence (laid out dim from the
+  /// start so the layout never reflows) and how many leading words are now "lit" as the
+  /// audio reaches them.
+  @Published private(set) var captionWords: [String] = []
+  @Published private(set) var revealedWordCount: Int = 0
   @Published var permissionDenied = false
 
   // Live caption reveal state for the AI side (TTS karaoke).
@@ -209,14 +214,19 @@ final class VoiceSessionViewModel: ObservableObject {
     if asSonia {
       transcript.append(Line(speaker: .sonia, text: text))
     }
-    state = .speaking
-    statusText = "Sonia is speaking…"
 
-    // Reset the karaoke reveal state for this utterance.
+    // Prepare the karaoke caption — the whole sentence, all dim — BEFORE flipping to
+    // `.speaking` so the view never flashes the fully-lit line. Words light up as the
+    // audio reaches them, against this fixed layout (no reflow).
     liveCaption = ""
     ttsWords = []
     ttsStarts = []
     ttsAnchor = nil
+    captionWords = text.split(separator: " ").map(String.init)
+    revealedWordCount = 0
+
+    state = .speaking
+    statusText = "Sonia is speaking…"
 
     do {
       try audio.startPlayback()
@@ -242,8 +252,8 @@ final class VoiceSessionViewModel: ObservableObject {
     // to the end instead of being cut off by `setIdle()`.
     await waitForPlaybackToFinish()
 
-    // Guarantee the full line is shown once playback finishes (covers any missed words).
-    if state == .speaking { liveCaption = text }
+    // Guarantee the whole line is lit once playback finishes (covers any missed words).
+    if state == .speaking { revealedWordCount = captionWords.count }
   }
 
   /// Sleeps until the audio scheduled during this utterance has finished playing,
@@ -274,8 +284,11 @@ final class VoiceSessionViewModel: ObservableObject {
       let delay = max(0, anchor.addingTimeInterval(startSec).timeIntervalSinceNow)
       Task { @MainActor [weak self] in
         try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-        guard let self, self.state == .speaking, index < self.ttsWords.count else { return }
-        self.liveCaption = self.ttsWords[0...index].joined(separator: " ")
+        guard let self, self.state == .speaking else { return }
+        // Light leading words up to (and including) this one. Clamp to the displayed
+        // sentence and stay monotonic so out-of-order timers never un-light a word.
+        let lit = min(index + 1, self.captionWords.count)
+        self.revealedWordCount = max(self.revealedWordCount, lit)
       }
     }
   }
