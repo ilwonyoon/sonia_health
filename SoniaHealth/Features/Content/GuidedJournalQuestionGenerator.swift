@@ -67,11 +67,16 @@ struct GuidedJournalQuestionGenerator {
     memory: SoniaMemoryContext?,
     carryOver: [QA]
   ) -> String {
-    let arc = kind == .morningIntention
+    let isMorning = kind == .morningIntention
+
+    let arc = isMorning
       ? """
-        This is the MORNING. The arc sets the day FORWARD: ground them first, then help \
-        them choose where to put their attention and how they want to meet what's ahead. \
-        Lean gentle and quietly energizing. Never ask them to recap a day that hasn't happened.
+        This is a SHORT (~3 minute) SPOKEN MORNING check-in — a daily ritual, not a deep \
+        session. Its single job: reinforce ONE concrete behavior change so the day starts well. \
+        Three brief beats: (1) let them land and say how they are, (2) bring in the goal you set \
+        together and take in how they feel about it, (3) remind them of the specific action they \
+        committed to and ask them to carry it into today. Lean gentle and quietly energizing; \
+        never ask them to recap a day that hasn't happened.
         """
       : """
         This is the EVENING. The arc CLOSES the day: let them look back honestly, find \
@@ -79,33 +84,57 @@ struct GuidedJournalQuestionGenerator {
         Lean calm, integrative, and releasing.
         """
 
-    let position = step == 0
-      ? "Write the FIRST of three questions — an inviting, low-pressure opener."
-      : (step >= questionCount - 1
-        ? "Write the THIRD and final question. It should help them land and carry one clear thing forward."
-        : "Write the SECOND question.")
+    let followUpText = """
 
-    let followUp = step == 0
-      ? ""
-      : """
+      It must follow naturally from what they just said — reflect the feeling underneath it \
+      before you move on. Never repeat or merely rephrase a previous question.
+      """
 
-        It must follow naturally from what they just said — go one layer deeper, or in a \
-        direction their answer opened. Never repeat or merely rephrase a previous question.
-        """
+    let position: String
+    let followUp: String
+    if isMorning {
+      if step == 0 {
+        position = "BEAT 1 — Open. Simply ask what's on their mind, or how they're feeling as the day begins. Keep it pure and low-pressure; do NOT mention goals, tasks, or yesterday yet."
+        followUp = ""
+      } else if step >= questionCount - 1 {
+        position = """
+          BEAT 3 — Reinforce. Name the SPECIFIC action they last committed to (the open thread \
+          under 'WHERE THINGS STAND NOW' below — e.g. a phrase to use, a breath to take). Say it \
+          concretely, tie it to today, and gently ask them to keep it close. This one behavior is \
+          the point of the whole check-in.
+          """
+        followUp = followUpText
+      } else {
+        position = """
+          BEAT 2 — Nudge the goal + listen. Reflect the feeling in what they just said, then gently \
+          connect it to the goal you've been working on together (from your memory below). Curious \
+          and supportive, not prescriptive.
+          """
+        followUp = followUpText
+      }
+    } else {
+      position = step == 0
+        ? "Write the FIRST of three questions — an inviting, low-pressure opener."
+        : (step >= questionCount - 1
+          ? "Write the THIRD and final question. It should help them land and carry one clear thing forward."
+          : "Write the SECOND question.")
+      followUp = step == 0 ? "" : followUpText
+    }
 
     var blocks = [
       """
       You are Sonia, a warm AI wellness companion guiding someone you support daily through \
-      a short spoken journal — a three-question \(kind == .morningIntention ? "morning intention" : "evening reflection").
+      a short SPOKEN \(isMorning ? "morning check-in" : "evening reflection"). They will SPEAK \
+      their answer, so write the way you'd actually say it aloud — warm and brief.
 
       \(arc)
 
       \(position)\(followUp)
 
-      Use your memory of them below to make the question specific and genuinely relevant — \
-      never presumptuous, never a generic worksheet prompt. Keep it to one or two short \
-      sentences, plain and speakable. Output ONLY the question itself — no preamble, \
-      numbering, quotation marks, markdown, or emoji.
+      Use your memory of them below to make this specific and genuinely relevant — never \
+      presumptuous, never a generic worksheet prompt. Keep it to one or two short, speakable \
+      sentences. Output ONLY what you would say — no preamble, numbering, quotation marks, \
+      markdown, or emoji.
       """
     ]
 
