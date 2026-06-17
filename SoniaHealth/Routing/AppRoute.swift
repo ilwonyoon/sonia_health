@@ -9,6 +9,7 @@ enum AppRoute: Equatable {
   case chat        // Chat tab (placeholder for now)
   case content     // Content "Today" tab (IMG_3388): journal — open cards + completed timeline
   case you         // "You" tab (placeholder for now)
+  case journalStart(JournalCheckinKind)  // Guided-journal "call" landing: lift to your ear to begin
   case checkin(JournalCheckinKind)  // Guided answer flow (IMG_3369–3373) for an unanswered check-in
   case session
   case history
