@@ -101,11 +101,7 @@ struct ContentTodayView: View {
       sectionLabel("OPEN", count: today.openItems.count)
       LazyVGrid(columns: columns, spacing: SRSpacing.s12) {
         ForEach(today.openItems) { item in
-          JournalOpenCard(
-            item: item,
-            prominence: item.type == .checkin ? .featured : .standard,
-            onTap: { open(item) }
-          )
+          JournalOpenCard(item: item, onTap: { open(item) })
         }
       }
     }
