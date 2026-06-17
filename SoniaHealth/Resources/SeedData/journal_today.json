@@ -10,6 +10,18 @@
     "sectionsLeft": 3,
     "note": "Your answers are saved"
   },
+  "checkinQuestions": {
+    "morningIntention": [
+      "How are you feeling right now as you start the day?",
+      "If today brings more waiting on the job search, what's one thing within your control you want to stay focused on?",
+      "When the self-critical voice shows up today, what do you want your first response to be?"
+    ],
+    "eveningReflection": [
+      "How did today actually go for you?",
+      "What's one thing from today you want to give yourself a little credit for?",
+      "What's one worry you can set down before bed tonight?"
+    ]
+  },
   "items": [
     {
       "id": "open_evening",

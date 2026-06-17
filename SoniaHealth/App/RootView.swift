@@ -17,6 +17,8 @@ struct RootView: View {
         CompanionPhoneView()
       case .content:
         ContentTodayView()
+      case .checkin(let kind):
+        CheckInFlowView(kind: kind)
       case .session:
         SessionView()
       case .history:
@@ -67,6 +69,8 @@ private struct SplashView: View {
     case "home": return .home
     case "companion": return .companion
     case "content": return .content
+    case "morning": return .checkin(.morningIntention)
+    case "evening": return .checkin(.eveningReflection)
     case "session": return .session
     default: return nil
     }

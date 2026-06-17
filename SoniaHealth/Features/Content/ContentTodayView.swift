@@ -100,7 +100,9 @@ struct ContentTodayView: View {
     VStack(alignment: .leading, spacing: SRSpacing.s12) {
       sectionLabel("OPEN", count: today.openItems.count)
       LazyVGrid(columns: columns, spacing: SRSpacing.s12) {
-        ForEach(today.openItems) { OpenCard(item: $0, onTap: { router.navigate(to: .session) }) }
+        ForEach(today.openItems) { item in
+          OpenCard(item: item, onTap: { open(item) })
+        }
       }
     }
   }
@@ -118,6 +120,15 @@ struct ContentTodayView: View {
 
   private func sectionLabel(_ text: String, count: Int) -> some View {
     SRText("\(text) (\(count))", style: .eyebrow, tone: .tertiary)
+  }
+
+  /// Open a tapped item: check-ins go to the guided answer flow, others to a session.
+  private func open(_ item: JournalItem) {
+    if item.type == .checkin, let kind = item.kind {
+      router.navigate(to: .checkin(kind))
+    } else {
+      router.navigate(to: .session)
+    }
   }
 }
 

@@ -68,10 +68,16 @@ struct JournalToday: Codable, Equatable {
   let personaId: String
   let stats: JournalStats
   let checkInProgress: CheckInProgress?
+  /// Guided question sets keyed by JournalCheckinKind.rawValue.
+  let checkinQuestions: [String: [String]]
   let items: [JournalItem]
 
   var openItems: [JournalItem] { items.filter { $0.status == .open } }
   var completedItems: [JournalItem] { items.filter { $0.status == .completed } }
+
+  func questions(for kind: JournalCheckinKind) -> [String] {
+    checkinQuestions[kind.rawValue] ?? []
+  }
 }
 
 // MARK: - Loader
