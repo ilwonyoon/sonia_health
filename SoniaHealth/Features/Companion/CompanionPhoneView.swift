@@ -65,7 +65,7 @@ struct CompanionPhoneView: View {
             .shadow(color: .black.opacity(0.12), radius: 16, y: 6)
           Image(systemName: "phone.fill")
             .font(.system(size: 26, weight: .semibold))
-            .foregroundStyle(SRColor.textPrimary)
+            .foregroundStyle(SRColor.brandAccent)   // green icon = start a call (pairs with red end-call)
         }
         .frame(width: 76, height: 76)
       }
