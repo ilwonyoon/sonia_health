@@ -22,13 +22,18 @@ enum CartesiaConfig {
   /// Required version header/param for the Cartesia API.
   static let apiVersion = "2024-11-13"
 
-  // MARK: Models
-  static let ttsModel = "sonic-3"
-  static let sttModel = "ink-whisper"
+  // MARK: Models (latest as of 2026-06; verified working with apiVersion above)
+  /// Sonic-3.5 — latest TTS (refined prosody/pacing, <90ms). `sonic-3.5` tracks the
+  /// newest stable snapshot. Superseded `sonic-3`.
+  static let ttsModel = "sonic-3.5"
+  /// Ink-2 — latest STT (lowest WER, native turn detection). Superseded `ink-whisper`.
+  /// NOTE: Ink-2 does native turn detection / semantic endpointing — verify the STT
+  /// WebSocket client isn't double-handling turns with external VAD.
+  static let sttModel = "ink-2"
   static let language = "en"
 
-  /// "Skylar" — warm, approachable American female. Recommended for therapy.
-  static let defaultVoiceID = "e07c00bc-4134-4eae-9ea4-1a55fb45746b"
+  /// "Skylar - Friendly Guide" — warm, approachable American female. Good for therapy.
+  static let defaultVoiceID = "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4"
 
   // MARK: Audio formats
   /// Microphone capture / STT input.
