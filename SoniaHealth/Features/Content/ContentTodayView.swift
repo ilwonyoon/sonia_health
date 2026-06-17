@@ -90,7 +90,7 @@ struct ContentTodayView: View {
       sectionLabel("OPEN", count: today.openItems.count)
       LazyVGrid(columns: columns, spacing: SRSpacing.s12) {
         ForEach(today.openItems) { item in
-          OpenCard(item: item, onTap: { open(item) })
+          JournalOpenCard(item: item, onTap: { open(item) })
         }
       }
     }
@@ -102,7 +102,7 @@ struct ContentTodayView: View {
     VStack(alignment: .leading, spacing: SRSpacing.s12) {
       sectionLabel("COMPLETED", count: today.completedItems.count)
       VStack(spacing: SRSpacing.s12) {
-        ForEach(today.completedItems) { CompletedRow(item: $0) }
+        ForEach(today.completedItems) { JournalCompletedCard(item: $0) }
       }
     }
   }
@@ -117,132 +117,6 @@ struct ContentTodayView: View {
       router.navigate(to: .checkin(kind))
     } else {
       router.navigate(to: .session)
-    }
-  }
-}
-
-// MARK: - Open card
-
-private struct OpenCard: View {
-  let item: JournalItem
-  var onTap: () -> Void = {}
-
-  var body: some View {
-    Button(action: onTap) {
-      SRCard {
-        VStack(alignment: .leading, spacing: SRSpacing.s10) {
-          HStack(alignment: .top) {
-            JournalIconBadge(item: item)
-            Spacer()
-            VStack(alignment: .trailing, spacing: SRSpacing.s2) {
-              Text(item.displayTime)
-                .font(.system(size: 12)).foregroundStyle(SRColor.textTertiary)
-              PointsPill(points: item.points)
-            }
-          }
-          SRText(item.title, style: .bodyEmphasis)
-          Text(item.prompt ?? item.body ?? "")
-            .font(.system(size: 13))
-            .foregroundStyle(SRColor.textSecondary)
-            .lineLimit(3)
-            .multilineTextAlignment(.leading)
-        }
-        .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)
-        .padding(SRSpacing.cardPadding)
-      }
-    }
-    .buttonStyle(.plain)
-  }
-}
-
-// MARK: - Completed timeline row
-
-private struct CompletedRow: View {
-  let item: JournalItem
-
-  var body: some View {
-    HStack(alignment: .top, spacing: SRSpacing.s12) {
-      VStack(spacing: SRSpacing.s4) {
-        Text(item.displayTime)
-          .font(.system(size: 11)).foregroundStyle(SRColor.textTertiary)
-          .fixedSize()
-        Circle().fill(JournalPalette.accent(for: item)).frame(width: 8, height: 8)
-        Rectangle().fill(SRColor.borderMuted).frame(width: 1).frame(maxHeight: .infinity)
-      }
-      .frame(width: 64)
-
-      SRCard {
-        VStack(alignment: .leading, spacing: SRSpacing.s8) {
-          HStack(spacing: SRSpacing.s8) {
-            JournalIconBadge(item: item)
-            SRText(item.title, style: .bodyEmphasis)
-            Spacer()
-            PointsPill(points: item.points)
-          }
-          if let subtitle = item.subtitle {
-            Text(subtitle).font(.system(size: 14)).foregroundStyle(SRColor.textSecondary)
-          }
-          if let answer = item.answer {
-            Text(answer).font(.system(size: 15)).foregroundStyle(SRColor.textPrimary)
-              .fixedSize(horizontal: false, vertical: true)
-          }
-          if let response = item.soniaResponse {
-            Text(response).font(.system(size: 13)).italic()
-              .foregroundStyle(SRColor.textSecondary)
-              .fixedSize(horizontal: false, vertical: true)
-          }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(SRSpacing.cardPadding)
-        .overlay(alignment: .leading) {
-          RoundedRectangle(cornerRadius: 2)
-            .fill(JournalPalette.accent(for: item))
-            .frame(width: 3)
-            .padding(.vertical, SRSpacing.s8)
-        }
-      }
-    }
-  }
-}
-
-// MARK: - Shared bits
-
-private struct JournalIconBadge: View {
-  let item: JournalItem
-  var body: some View {
-    ZStack {
-      RoundedRectangle(cornerRadius: SRRadius.md)
-        .fill(JournalPalette.accent(for: item).opacity(0.18))
-        .frame(width: 30, height: 30)
-      Image(systemName: item.sfSymbol)
-        .font(.system(size: 14, weight: .medium))
-        .foregroundStyle(JournalPalette.accent(for: item))
-    }
-  }
-}
-
-private struct PointsPill: View {
-  let points: Int
-  var body: some View {
-    HStack(spacing: SRSpacing.s2) {
-      Image(systemName: "leaf.fill").font(.system(size: 10))
-      Text("+\(points)").font(.system(size: 12, weight: .semibold))
-    }
-    .foregroundStyle(SRColor.accentReward)
-  }
-}
-
-private enum JournalPalette {
-  static func accent(for item: JournalItem) -> Color {
-    switch item.type {
-    case .quote: return SRColor.accentEvening
-    case .meditation, .exercise: return SRColor.accentReward
-    case .checkin:
-      switch item.kind {
-      case .morningIntention: return SRColor.accentMorning
-      case .eveningReflection: return SRColor.accentEvening
-      case .none: return SRColor.brandAccent
-      }
     }
   }
 }
