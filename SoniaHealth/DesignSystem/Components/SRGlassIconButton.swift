@@ -27,7 +27,20 @@ struct SRGlassIconButton: View {
   }
 
   var body: some View {
-    fallbackButton
+    if #available(iOS 26.0, *) {
+      Button(action: action) {
+        Image(systemName: systemName)
+          .font(.system(size: 15, weight: .semibold))
+          .foregroundStyle(foregroundColor ?? SRColor.textPrimary)
+          .frame(width: 44, height: 44)
+          .contentShape(Circle())
+      }
+      .buttonStyle(.plain)
+      .glassEffect(.regular.interactive(), in: Circle())
+      .accessibilityLabel(accessibilityLabel)
+    } else {
+      fallbackButton
+    }
   }
 
   private var fallbackButton: some View {

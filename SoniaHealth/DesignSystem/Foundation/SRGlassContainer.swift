@@ -45,15 +45,20 @@ struct SRGlassContainer<Content: View>: View {
   }
 
   var body: some View {
-    content
-      .padding(.horizontal, role.horizontalPadding)
-      .padding(.vertical, role.verticalPadding)
-      .background(.ultraThinMaterial)
-      .overlay(
-        RoundedRectangle(cornerRadius: role.cornerRadius, style: .continuous)
-          .stroke(SRColor.borderDefault, lineWidth: 1)
-      )
-      .clipShape(RoundedRectangle(cornerRadius: role.cornerRadius, style: .continuous))
-      .shadow(color: .black.opacity(0.08), radius: 16, x: 0, y: 8)
+    let shape = RoundedRectangle(cornerRadius: role.cornerRadius, style: .continuous)
+    if #available(iOS 26.0, *) {
+      content
+        .padding(.horizontal, role.horizontalPadding)
+        .padding(.vertical, role.verticalPadding)
+        .glassEffect(.regular, in: shape)
+        .shadow(color: .black.opacity(0.06), radius: 12, x: 0, y: 6)
+    } else {
+      content
+        .padding(.horizontal, role.horizontalPadding)
+        .padding(.vertical, role.verticalPadding)
+        .background(.ultraThinMaterial, in: shape)
+        .overlay(shape.stroke(SRColor.borderDefault, lineWidth: 1))
+        .shadow(color: .black.opacity(0.08), radius: 16, x: 0, y: 8)
+    }
   }
 }

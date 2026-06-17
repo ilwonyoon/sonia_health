@@ -75,6 +75,12 @@ final class AudioSessionController {
     let input = engine.inputNode
     let hardwareFormat = input.outputFormat(forBus: 0)
 
+    // Guard against an invalid input format (e.g. Simulator with no microphone),
+    // which would make installTap(onBus:) raise an Obj-C exception and crash.
+    guard hardwareFormat.sampleRate > 0, hardwareFormat.channelCount > 0 else {
+      throw AudioError.formatUnavailable
+    }
+
     guard let converter = AVAudioConverter(from: hardwareFormat, to: captureFormat) else {
       throw AudioError.converterUnavailable
     }
