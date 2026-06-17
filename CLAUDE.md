@@ -38,10 +38,13 @@ Adapted from Andrej Karpathy's observations on LLM coding pitfalls
   (explicit paths). A blanket add here once (a) swept other agents' in-progress work
   into a commit and (b) leaked real API keys. Run `git ls-files <path>` before assuming
   a file is untracked — a sibling commit may already include it.
-- **Secrets:** `SoniaHealth/Config/Secrets.xcconfig` holds real Cartesia/Anthropic keys
-  and is gitignored. Before any commit, `git check-ignore` anything matching
-  `*Secret*`, `.env`, `*.xcconfig`. Never commit keys. Only `Secrets.example.xcconfig`
-  (empty template) is tracked.
+- **Secrets:** `SoniaHealth/Config/Secrets.xcconfig` is the **single source of truth**
+  for the `CARTESIA_API_KEY` / `ANTHROPIC_API_KEY` (gitignored, injected into Info.plist
+  at build). Tooling reads the key from it too — e.g. `scripts/cartesia-voices.sh` lists
+  the Cartesia voice catalog using this same key, so there is **no separate `.env`** to
+  keep in sync. Update the key in this one file only. Before any commit, `git check-ignore`
+  anything matching `*Secret*`, `.env`, `*.xcconfig`. Never commit keys. Only
+  `Secrets.example.xcconfig` (empty template) is tracked.
 - **Flow:** the team pushes directly to `main` (shared local working copy makes PRs
   awkward to retrofit). Direct `git push origin main` is the accepted flow; PRs optional.
 - **Commit messages:** brief summary + timestamp `DD/MM/YY - HH:MM:SS`, conventional

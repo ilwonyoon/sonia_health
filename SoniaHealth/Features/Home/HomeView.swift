@@ -62,7 +62,7 @@ struct HomeView: View {
           Spacer(minLength: 0)
         }
         SRButton("Begin talking", kind: .primary, isFullWidth: true) {
-          router.navigate(to: .session)
+          router.navigate(to: .companion)
         }
       }
     }

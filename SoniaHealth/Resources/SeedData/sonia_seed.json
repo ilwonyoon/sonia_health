@@ -49,7 +49,7 @@
       "style": "warm, grounding",
       "descriptor": "A calm, steady presence who slows things down and helps you feel safe to open up.",
       "sampleLine": "Take a slow breath with me — we've got time. Let's start with how you're really doing.",
-      "cartesiaVoiceId": null
+      "cartesiaVoiceId": "d7bf7d75-64b7-4c1e-86c0-79d647366587"
     },
     {
       "id": "voice_maya",
@@ -59,7 +59,7 @@
       "style": "gentle, encouraging",
       "descriptor": "Bright and softly optimistic — good for days you need a little lift.",
       "sampleLine": "Hey, I'm really glad you showed up today. Let's take this one small step at a time.",
-      "cartesiaVoiceId": null
+      "cartesiaVoiceId": "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc"
     },
     {
       "id": "voice_eleanor",
@@ -69,7 +69,7 @@
       "style": "wise, maternal",
       "descriptor": "Unhurried and reassuring, with the steadiness of someone who's seen a lot.",
       "sampleLine": "Whatever today brought, you don't have to carry it alone. Tell me where to start.",
-      "cartesiaVoiceId": null
+      "cartesiaVoiceId": "273f9ef7-9fc2-4def-88bb-ab108c6249ca"
     },
     {
       "id": "voice_julian",
@@ -79,7 +79,7 @@
       "style": "calm, steady",
       "descriptor": "Grounded and measured — a level voice when your thoughts feel loud.",
       "sampleLine": "Let's set the noise down for a minute and look at just what's in front of you.",
-      "cartesiaVoiceId": null
+      "cartesiaVoiceId": "0ad65e7f-006c-47cf-bd31-52279d487913"
     },
     {
       "id": "voice_theo",
@@ -89,7 +89,7 @@
       "style": "friendly, casual",
       "descriptor": "Easygoing and down-to-earth, like checking in with a good friend.",
       "sampleLine": "No pressure here — just you and me. What's been on your mind today?",
-      "cartesiaVoiceId": null
+      "cartesiaVoiceId": "30894953-bcce-41fe-892c-15ce19c843ff"
     },
     {
       "id": "voice_sam",
@@ -99,7 +99,7 @@
       "style": "soothing, neutral",
       "descriptor": "Soft, even, and unobtrusive — a quiet space to think out loud.",
       "sampleLine": "There's no right way to do this. Start anywhere, and I'll follow you.",
-      "cartesiaVoiceId": null
+      "cartesiaVoiceId": "7d444628-dd13-442b-b687-71a6baf0c07e"
     }
   ],
   "assessments": [

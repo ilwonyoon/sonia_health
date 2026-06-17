@@ -13,6 +13,8 @@ struct RootView: View {
         SplashView()
       case .onboarding, .home:
         HomeView()
+      case .companion:
+        CompanionPhoneView()
       case .session:
         SessionView()
       case .history:
@@ -47,8 +49,23 @@ private struct SplashView: View {
       SRText("Your voice companion for calmer days", style: .supporting, tone: .secondary)
     }
     .task {
+      // Deep-link for screenshots/QA: SIMCTL_CHILD_SONIA_ROUTE=companion
+      if let raw = ProcessInfo.processInfo.environment["SONIA_ROUTE"],
+         let route = Self.route(for: raw) {
+        router.navigate(to: route)
+        return
+      }
       try? await Task.sleep(nanoseconds: 1_200_000_000)
       router.navigate(to: .home)
+    }
+  }
+
+  static func route(for raw: String) -> AppRoute? {
+    switch raw {
+    case "home": return .home
+    case "companion": return .companion
+    case "session": return .session
+    default: return nil
     }
   }
 }
