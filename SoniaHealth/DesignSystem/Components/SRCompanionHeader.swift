@@ -27,7 +27,7 @@ struct SRCompanionHeader: View {
 
   private var nameChip: some View {
     let shape = Capsule(style: .continuous)
-    let label = SRText(name, style: .controlLabel, tone: .inverse)
+    let label = SRText(name, style: .controlLabel, tone: .primary)
       .padding(.horizontal, SRSpacing.s16)
       .padding(.vertical, SRSpacing.s8)
     return Group {

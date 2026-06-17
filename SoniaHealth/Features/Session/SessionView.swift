@@ -19,7 +19,7 @@ struct SessionView: View {
           .frame(maxWidth: .infinity)
           .overlay(alignment: .topTrailing) {
             SRGlassIconButton(systemName: "pause.fill", accessibilityLabel: "End session",
-                              foregroundColor: SRColor.textOnPhoto) {
+                              foregroundColor: SRColor.textPrimary) {
               model.end()
               router.navigate(to: .companion)
             }
@@ -51,11 +51,11 @@ struct SessionView: View {
                         accessibilityLabel: "Tap to speak",
                         foregroundColor: micTint) { model.toggleMic() }
       SRGlassIconButton(systemName: "text.bubble", accessibilityLabel: "Captions",
-                        foregroundColor: SRColor.textOnPhoto) {}
+                        foregroundColor: SRColor.textPrimary) {}
       SRGlassIconButton(systemName: "square.and.arrow.up", accessibilityLabel: "Share",
-                        foregroundColor: SRColor.textOnPhoto) {}
+                        foregroundColor: SRColor.textPrimary) {}
       SRGlassIconButton(systemName: "gearshape", accessibilityLabel: "Settings",
-                        foregroundColor: SRColor.textOnPhoto) { router.present(sheet: .settings) }
+                        foregroundColor: SRColor.textPrimary) { router.present(sheet: .settings) }
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
     .padding(.trailing, SRSpacing.s16)
@@ -64,10 +64,9 @@ struct SessionView: View {
   // MARK: - Live caption
 
   private var caption: some View {
-    SRText(captionText, style: .sectionTitleMedium, tone: .inverse)
+    SRText(captionText, style: .sectionTitleMedium, tone: .primary)
       .multilineTextAlignment(.center)
       .frame(maxWidth: .infinity, alignment: .center)
-      .shadow(color: .black.opacity(0.4), radius: 8, y: 2)
       .animation(.easeInOut(duration: 0.2), value: captionText)
   }
 
@@ -97,6 +96,6 @@ struct SessionView: View {
   }
 
   private var micTint: Color {
-    model.state == .listening ? SRColor.brandAccent : SRColor.textOnPhoto
+    model.state == .listening ? SRColor.brandAccent : SRColor.textPrimary
   }
 }

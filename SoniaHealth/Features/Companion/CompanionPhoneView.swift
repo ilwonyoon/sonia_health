@@ -47,12 +47,11 @@ struct CompanionPhoneView: View {
       SRText(
         "I want them to think of me as someone you can always trust.",
         style: .quote,
-        tone: .inverse
+        tone: .primary
       )
       .multilineTextAlignment(.center)
 
-      SRText("— You", style: .supporting, tone: .inverse)
-        .opacity(0.6)
+      SRText("— You", style: .supporting, tone: .secondary)
     }
   }
 }

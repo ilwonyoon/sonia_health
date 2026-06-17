@@ -15,7 +15,7 @@ struct SRSlideToStart: View {
       let maxX = max(0, geo.size.width - thumbSize - 6)
       ZStack(alignment: .leading) {
         track
-        SRText(title, style: .bodyEmphasis, tone: .inverse)
+        SRText(title, style: .bodyEmphasis, tone: .primary)
           .frame(maxWidth: .infinity)
           .opacity(1 - Double(dragX / max(maxX, 1)) * 1.2)
 
@@ -57,10 +57,10 @@ struct SRSlideToStart: View {
 
   private var thumb: some View {
     ZStack {
-      Circle().fill(Color.white)
+      Circle().fill(SRColor.brandAccent)
       SRIcon(systemName: "arrow.right", color: SRColor.textOnAccent, size: 20)
     }
     .frame(width: thumbSize, height: thumbSize)
-    .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
+    .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 4)
   }
 }

@@ -58,7 +58,7 @@ struct SRTabBarGlass: View {
       Text(tab.title)
         .font(.system(size: 11, weight: active ? .semibold : .regular))
     }
-    .foregroundStyle(active ? SRColor.brandAccent : SRColor.textOnPhoto.opacity(0.85))
+    .foregroundStyle(active ? SRColor.brandAccent : SRColor.textSecondary)
     .frame(maxWidth: .infinity)
     .padding(.vertical, SRSpacing.s4)
   }
