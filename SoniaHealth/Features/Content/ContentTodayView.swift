@@ -31,6 +31,27 @@ struct ContentTodayView: View {
         .padding(.top, SRSpacing.s12)
       }
     }
+    .task { await warmGuidedJournals() }
+  }
+
+  /// Brief req #1: have Q1 ready before the user opens an entry. When the Today page
+  /// appears, warm the first question for each open check-in so tapping the card is instant.
+  @MainActor
+  private func warmGuidedJournals() async {
+    guard let seed = try? SeedStore.load() else { return }
+    let journal = MemoryStore.load()
+    let memory = SoniaMemoryContext.build(from: seed, journal: journal)
+    for item in today.openItems where item.type == .checkin {
+      guard let kind = item.kind else { continue }
+      var carryOver: [GuidedJournalQuestionGenerator.QA] = []
+      if kind == .eveningReflection,
+         let morning = journal.guidedEntry(date: seed.meta.today, kind: .morningIntention) {
+        carryOver = morning.qa.map { .init(question: $0.question, answer: $0.answer) }
+      }
+      GuidedJournalPrefetcher.shared.warm(
+        kind: kind, memory: memory, carryOver: carryOver, today: seed.meta.today
+      )
+    }
   }
 
   // MARK: Header
