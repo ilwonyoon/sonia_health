@@ -1,0 +1,6 @@
+# Defense-in-depth: ignore real secrets regardless of which git repo root applies.
+# The actual keys live in Secrets.xcconfig (this file stays gitignored everywhere).
+Secrets.xcconfig
+
+# Keep the safe template tracked:
+!Secrets.example.xcconfig

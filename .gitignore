@@ -12,3 +12,7 @@ xcuserdata/
 # SPM
 .build/
 .swiftpm/
+
+# Tooling / hook artifacts
+.claude/
+**/.claude/
