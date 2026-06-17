@@ -43,19 +43,32 @@ final class AudioSessionController {
     }
   }
 
-  private func configureSession() throws {
+  private var isRecordingSession = false
+
+  /// Activates the audio session. Playback uses `.playback` (no microphone prompt);
+  /// only recording switches to `.playAndRecord`, so the mic permission alert is
+  /// deferred until the user actually taps to speak.
+  private func configureSession(recording: Bool) throws {
     let session = AVAudioSession.sharedInstance()
-    try session.setCategory(
-      .playAndRecord,
-      mode: .voiceChat,
-      options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP]
-    )
+    if recording {
+      try session.setCategory(
+        .playAndRecord,
+        mode: .voiceChat,
+        options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP]
+      )
+    } else {
+      try session.setCategory(.playback, mode: .spokenAudio, options: [])
+    }
     try session.setActive(true, options: [])
+    isRecordingSession = recording
   }
 
-  private func startEngineIfNeeded() throws {
+  private func startEngineIfNeeded(recording: Bool) throws {
+    if recording, !isRecordingSession {
+      try configureSession(recording: true)  // upgrade to record before tapping input
+    }
     guard isEngineRunning == false else { return }
-    try configureSession()
+    try configureSession(recording: recording)
 
     if engine.attachedNodes.contains(playerNode) == false {
       engine.attach(playerNode)
@@ -70,7 +83,7 @@ final class AudioSessionController {
   // MARK: - Capture (mic -> STT)
 
   func startCapturing() throws {
-    try startEngineIfNeeded()
+    try startEngineIfNeeded(recording: true)
 
     let input = engine.inputNode
     let hardwareFormat = input.outputFormat(forBus: 0)
@@ -140,7 +153,7 @@ final class AudioSessionController {
   // MARK: - Playback (TTS -> speaker)
 
   func startPlayback() throws {
-    try startEngineIfNeeded()
+    try startEngineIfNeeded(recording: false)
     if playerNode.isPlaying == false {
       playerNode.play()
     }

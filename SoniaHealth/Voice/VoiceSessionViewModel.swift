@@ -43,14 +43,8 @@ final class VoiceSessionViewModel: ObservableObject {
       DispatchQueue.main.async { self?.inputLevel = level }
     }
 
-    let granted = await audio.requestPermission()
-    guard granted else {
-      permissionDenied = true
-      state = .error("Microphone access is needed for a voice session.")
-      statusText = "Microphone access denied"
-      return
-    }
-
+    // Mic permission is requested lazily on the first tap-to-speak so the call
+    // screen opens cleanly with just Sonia's greeting.
     await speak(SoniaSystemPrompt.introduction, asSonia: true)
     setIdle()
   }
@@ -66,7 +60,7 @@ final class VoiceSessionViewModel: ObservableObject {
   func toggleMic() {
     switch state {
     case .idle:
-      startListening()
+      Task { await startListening() }
     case .listening:
       Task { await finishTurn() }
     default:
@@ -74,7 +68,15 @@ final class VoiceSessionViewModel: ObservableObject {
     }
   }
 
-  private func startListening() {
+  private func startListening() async {
+    let granted = await audio.requestPermission()
+    guard granted else {
+      permissionDenied = true
+      state = .error("Microphone access is needed for a voice session.")
+      statusText = "Microphone access denied"
+      return
+    }
+
     let stt = CartesiaSTTClient()
     currentSTT = stt
     stt.connect()
