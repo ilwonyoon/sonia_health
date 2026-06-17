@@ -223,6 +223,7 @@ final class VoiceSessionViewModel: ObservableObject {
     } catch {
       print("[Session] playback start failed: \(error)")
     }
+    audio.resetPlaybackClock()
 
     let tts = CartesiaTTSClient()
     currentTTS = tts
@@ -235,8 +236,23 @@ final class VoiceSessionViewModel: ObservableObject {
     }
     currentTTS = nil
 
+    // The WebSocket delivers audio faster than realtime, so `tts.speak` returns while
+    // the speaker is still playing. Stay in `.speaking` until playback actually finishes
+    // so the word-by-word caption reveal (scheduled against the playback clock) can run
+    // to the end instead of being cut off by `setIdle()`.
+    await waitForPlaybackToFinish()
+
     // Guarantee the full line is shown once playback finishes (covers any missed words).
     if state == .speaking { liveCaption = text }
+  }
+
+  /// Sleeps until the audio scheduled during this utterance has finished playing,
+  /// measured from when playback started (`ttsAnchor`).
+  private func waitForPlaybackToFinish() async {
+    guard let anchor = ttsAnchor else { return }
+    let remaining = audio.scheduledPlaybackSeconds - Date().timeIntervalSince(anchor)
+    guard remaining > 0 else { return }
+    try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
   }
 
   /// Anchors the caption reveal clock to when audio actually starts playing.

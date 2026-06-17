@@ -28,6 +28,11 @@ final class AudioSessionController {
   private var captureConverter: AVAudioConverter?
   private var isEngineRunning = false
 
+  /// Total audio (seconds) scheduled for playback since the last `resetPlaybackClock()`.
+  /// The TTS WebSocket delivers audio faster than realtime, so the session uses this to
+  /// stay in "speaking" until playback actually finishes (keeps captions in sync).
+  private(set) var scheduledPlaybackSeconds: Double = 0
+
   /// Called with each captured 16 kHz Int16 chunk while listening.
   var onCapture: ((Data) -> Void)?
   /// Approximate input level (0...1) for UI feedback.
@@ -159,6 +164,11 @@ final class AudioSessionController {
     }
   }
 
+  /// Resets the scheduled-playback duration at the start of each spoken utterance.
+  func resetPlaybackClock() {
+    scheduledPlaybackSeconds = 0
+  }
+
   /// Schedules one chunk of 24 kHz Int16 PCM TTS audio for playback.
   func enqueueTTS(pcmS16LE data: Data) {
     guard data.isEmpty == false else { return }
@@ -176,6 +186,7 @@ final class AudioSessionController {
       }
     }
 
+    scheduledPlaybackSeconds += Double(sampleCount) / CartesiaConfig.outputSampleRate
     playerNode.scheduleBuffer(buffer, completionHandler: nil)
   }
 
