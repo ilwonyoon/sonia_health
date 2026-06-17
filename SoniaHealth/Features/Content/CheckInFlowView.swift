@@ -38,11 +38,16 @@ struct CheckInFlowView: View {
 
       VStack(spacing: SRSpacing.s24) {
         header
-        progressBar
-        eyebrow
-        question
+        CheckInProgressBar(total: questions.count, current: index, accent: accent)
+        CheckInQuestionHeader(
+          symbol: symbol,
+          step: index + 1,
+          total: questions.count,
+          question: questions.indices.contains(index) ? questions[index] : "",
+          accent: accent
+        )
         Spacer(minLength: SRSpacing.s24)
-        inputField
+        CheckInResponseField(text: answerBinding, accent: accent, focused: $inputFocused)
         controls
       }
       .padding(.horizontal, SRSpacing.s20)
@@ -68,58 +73,6 @@ struct CheckInFlowView: View {
         Spacer()
       }
     }
-  }
-
-  // MARK: Progress
-
-  private var progressBar: some View {
-    HStack(spacing: SRSpacing.s8) {
-      ForEach(0..<max(questions.count, 1), id: \.self) { i in
-        Capsule()
-          .fill(i <= index ? accent : SRColor.borderMuted)
-          .frame(height: 3)
-      }
-    }
-  }
-
-  private var eyebrow: some View {
-    HStack(spacing: SRSpacing.s4) {
-      Image(systemName: symbol).font(.system(size: 12)).foregroundStyle(accent)
-      Text("Question \(index + 1) of \(questions.count)")
-        .font(.system(size: 13)).foregroundStyle(SRColor.textTertiary)
-    }
-  }
-
-  private var question: some View {
-    SRText(questions.indices.contains(index) ? questions[index] : "", style: .questionTitle)
-      .multilineTextAlignment(.center)
-      .frame(maxWidth: .infinity)
-  }
-
-  // MARK: Input
-
-  private var inputField: some View {
-    HStack(alignment: .bottom, spacing: SRSpacing.s8) {
-      TextField(
-        "Type your response...",
-        text: answerBinding,
-        axis: .vertical
-      )
-      .focused($inputFocused)
-      .font(.system(size: 15))
-      .foregroundStyle(SRColor.textPrimary)
-      .tint(accent)
-      .lineLimit(1...5)
-
-      Image(systemName: "mic.fill")
-        .font(.system(size: 16))
-        .foregroundStyle(SRColor.textSecondary)
-    }
-    .padding(SRSpacing.s16)
-    .background(
-      RoundedRectangle(cornerRadius: SRRadius.lg, style: .continuous)
-        .fill(SRColor.backgroundElevated)
-    )
   }
 
   // MARK: Controls
