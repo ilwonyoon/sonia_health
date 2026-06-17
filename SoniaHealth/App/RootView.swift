@@ -15,6 +15,8 @@ struct RootView: View {
         HomeView()
       case .companion:
         CompanionPhoneView()
+      case .content:
+        ContentTodayView()
       case .session:
         SessionView()
       case .history:
@@ -64,6 +66,7 @@ private struct SplashView: View {
     switch raw {
     case "home": return .home
     case "companion": return .companion
+    case "content": return .content
     case "session": return .session
     default: return nil
     }

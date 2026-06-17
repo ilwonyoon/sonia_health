@@ -1,0 +1,64 @@
+{
+  "date": "2026-06-16",
+  "personaId": "user_sarah",
+  "stats": {
+    "streakDays": 16,
+    "points": 585,
+    "linesJournaled": 4558
+  },
+  "checkInProgress": {
+    "sectionsLeft": 3,
+    "note": "Your answers are saved"
+  },
+  "items": [
+    {
+      "id": "open_evening",
+      "type": "checkin",
+      "kind": "eveningReflection",
+      "status": "open",
+      "time": "19:00",
+      "points": 50,
+      "title": "Evening Reflection",
+      "prompt": "A quick check-in on how the callback news sat with you today — and what you can set down before bed."
+    },
+    {
+      "id": "open_quote",
+      "type": "quote",
+      "status": "open",
+      "time": "15:02",
+      "points": 5,
+      "title": "Pema Chödrön",
+      "author": "Pema Chödrön",
+      "body": "You are the sky. Everything else — it's just the weather."
+    },
+    {
+      "id": "done_morning",
+      "type": "checkin",
+      "kind": "morningIntention",
+      "status": "completed",
+      "time": "07:42",
+      "points": 50,
+      "title": "Morning Intention",
+      "answer": "Let myself be a little excited about the second-round callback, and prep three stories — without pinning my whole self to the outcome.",
+      "soniaResponse": "You earned that callback, Sarah. Hold both: real hope, and the truth that your worth isn't riding on their decision."
+    },
+    {
+      "id": "done_breathing",
+      "type": "exercise",
+      "status": "completed",
+      "time": "08:15",
+      "points": 20,
+      "title": "Box Breathing",
+      "subtitle": "2 minutes · 4-4-4-4"
+    },
+    {
+      "id": "done_meditation",
+      "type": "meditation",
+      "status": "completed",
+      "time": "09:07",
+      "points": 50,
+      "title": "Meditation",
+      "subtitle": "2 minute meditation"
+    }
+  ]
+}
