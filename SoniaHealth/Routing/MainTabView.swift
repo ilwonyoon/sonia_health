@@ -55,7 +55,7 @@ struct MainTabView: View {
         .tag(Tab.settings)
         .tabItem { Label("Settings", systemImage: "gearshape.fill") }
     }
-    .tint(SRColor.brandAccent)
+    .tint(SRColor.textPrimary)
   }
 
   private var tabBinding: Binding<Tab> {

@@ -32,7 +32,8 @@ enum SRRawColor {
 }
 
 enum SRColor {
-  static let backgroundCanvas = Color(light: Color(hex: 0xFAFAF9), dark: Color(hex: 0x0C0C0B))
+  // App canvas — soft warm ivory sampled from soniahealth.com.
+  static let backgroundCanvas = Color(light: Color(hex: 0xF4F3EC), dark: Color(hex: 0x0C0C0B))
   static let backgroundSurface = Color(light: .white, dark: Color(hex: 0x1A1A18))
   static let backgroundSubtle = Color(light: SRRawColor.gray50, dark: Color(hex: 0x242422))
   static let backgroundElevated = Color(light: .white, dark: Color(hex: 0x242422))
