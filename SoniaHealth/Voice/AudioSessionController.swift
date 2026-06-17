@@ -67,11 +67,13 @@ final class AudioSessionController {
     guard isStarted == false else { return }
 
     let session = AVAudioSession.sharedInstance()
-    try session.setCategory(
-      .playAndRecord,
-      mode: .voiceChat,
-      options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP]
-    )
+    // `.allowBluetooth` was renamed to `.allowBluetoothHFP` in iOS 26; reference only the
+    // new name (gated) so there's no deprecation warning and BT headset mic still works.
+    var options: AVAudioSession.CategoryOptions = [.defaultToSpeaker, .allowBluetoothA2DP]
+    if #available(iOS 26.0, *) {
+      options.insert(.allowBluetoothHFP)
+    }
+    try session.setCategory(.playAndRecord, mode: .voiceChat, options: options)
     try session.setActive(true, options: [])
 
     // Voice-Processing I/O: echo cancellation + AGC. Enabling it on the input node also
