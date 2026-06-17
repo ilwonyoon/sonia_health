@@ -20,7 +20,12 @@ final class GuidedJournalCallViewModel: ObservableObject {
   @Published private(set) var index = 0
   @Published private(set) var inputLevel: Float = 0
   @Published private(set) var isSpeakerOn = false
+  /// Time-boxed: a short 3-minute check-in. Counts down from 3:00 and gently wraps up at 0.
+  @Published private(set) var secondsRemaining = 180
   @Published var micDenied = false
+
+  private let sessionLimit = 180
+  private var countdownTask: Task<Void, Never>?
 
   private let audio = AudioSessionController()
   private let generator: GuidedJournalQuestionGenerator
@@ -73,6 +78,8 @@ final class GuidedJournalCallViewModel: ObservableObject {
     audio.setSpeaker(false)
     UIDevice.current.isProximityMonitoringEnabled = true   // screen off when held to ear
 
+    startCountdown()
+
     let q1 = await GuidedJournalPrefetcher.shared.firstQuestion(
       kind: kind, memory: memory, carryOver: carryOver, today: today
     )
@@ -82,10 +89,39 @@ final class GuidedJournalCallViewModel: ObservableObject {
   func end() {
     guard ended == false else { return }
     ended = true
+    countdownTask?.cancel(); countdownTask = nil
     stt?.close(); stt = nil
     tts?.cancel(); tts = nil
     audio.teardown()
     UIDevice.current.isProximityMonitoringEnabled = false
+  }
+
+  // MARK: Countdown (3-minute time box)
+
+  private func startCountdown() {
+    countdownTask = Task { @MainActor [weak self] in
+      while true {
+        try? await Task.sleep(nanoseconds: 1_000_000_000)
+        guard let self, self.ended == false, Task.isCancelled == false else { return }
+        if self.secondsRemaining > 0 { self.secondsRemaining -= 1 }
+        if self.secondsRemaining <= 0 {
+          await self.wrapUpForTime()
+          return
+        }
+      }
+    }
+  }
+
+  /// Time's up — stop listening, save what was shared, and close warmly.
+  private func wrapUpForTime() async {
+    guard ended == false, phase != .ended else { return }
+    audio.stopCapturing()
+    stt?.close(); stt = nil
+    persist()
+    currentQuestion = ""
+    await speak("That's our few minutes for today. I've got what you shared — carry it gently with you.")
+    UIDevice.current.isProximityMonitoringEnabled = false
+    phase = .ended
   }
 
   // MARK: In-call controls
@@ -193,6 +229,7 @@ final class GuidedJournalCallViewModel: ObservableObject {
   }
 
   private func close() async {
+    countdownTask?.cancel(); countdownTask = nil
     persist()
     currentQuestion = ""
     let closing = kind == .morningIntention

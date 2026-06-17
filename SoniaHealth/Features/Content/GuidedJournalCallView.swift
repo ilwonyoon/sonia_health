@@ -20,13 +20,6 @@ struct GuidedJournalCallView: View {
   private var title: String {
     kind == .morningIntention ? "Morning Intention" : "Evening Reflection"
   }
-  private var orbLevel: Float {
-    switch vm.phase {
-    case .listening: return max(0.18, vm.inputLevel)
-    case .speaking:  return 0.4
-    default:         return 0.2
-    }
-  }
 
   var body: some View {
     ZStack {
@@ -36,12 +29,16 @@ struct GuidedJournalCallView: View {
         topBar
         Spacer()
 
-        VoiceOrbView(level: orbLevel, isActive: vm.phase != .ended)
-          .frame(width: 150, height: 150)
-
         caption
 
         Spacer()
+
+        if vm.phase != .ended {
+          Text(timeString(vm.secondsRemaining))
+            .font(.system(size: 15, weight: .medium, design: .monospaced))
+            .foregroundStyle(SRColor.textTertiary)
+            .monospacedDigit()
+        }
         controls
       }
       .padding(.horizontal, SRSpacing.s20)
@@ -162,5 +159,10 @@ struct GuidedJournalCallView: View {
   private func finish() {
     vm.end()
     router.navigate(to: .content)
+  }
+
+  private func timeString(_ seconds: Int) -> String {
+    let s = max(0, seconds)
+    return String(format: "%d:%02d", s / 60, s % 60)
   }
 }
