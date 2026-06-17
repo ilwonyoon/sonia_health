@@ -13,9 +13,6 @@ struct GuidedJournalStartView: View {
   @State private var started = false
 
   private var firstName: String { (try? SeedStore.load())?.user.firstName ?? "" }
-  private var accent: Color {
-    kind == .morningIntention ? SRColor.accentMorning : SRColor.accentEvening
-  }
   private var greeting: String {
     let name = firstName.isEmpty ? "" : ", \(firstName)"
     return kind == .morningIntention ? "Good morning\(name)" : "Good evening\(name)"
@@ -34,41 +31,28 @@ struct GuidedJournalStartView: View {
         header
         Spacer()
 
-        VoiceOrbView(level: 0.2, isActive: true)
-          .frame(width: 148, height: 148)
-
-        VStack(spacing: SRSpacing.s10) {
+        VStack(spacing: SRSpacing.s8) {
           SRText(greeting, style: .homeMessage)
-            .multilineTextAlignment(.center)
-          Text(subtitle)
-            .font(.system(size: 15))
-            .foregroundStyle(SRColor.textSecondary)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, SRSpacing.s24)
+          SRText(subtitle, style: .homeMessage, tone: .secondary)
         }
+        .multilineTextAlignment(.center)
+        .padding(.horizontal, SRSpacing.s12)
 
         Spacer()
 
-        HStack(spacing: SRSpacing.s8) {
-          Image(systemName: "ear").font(.system(size: 13, weight: .medium))
-          Text("Bring me to your ear to begin").font(.system(size: 13))
-        }
-        .foregroundStyle(SRColor.textTertiary)
-
+        // Hint doubles as the tap fallback (lift-to-ear is the primary trigger).
         Button { begin() } label: {
-          Text("Begin")
-            .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(SRColor.textOnAccent)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, SRSpacing.s16)
-            .background(Capsule().fill(accent))
+          HStack(spacing: SRSpacing.s8) {
+            Image(systemName: "ear").font(.system(size: 14, weight: .medium))
+            Text("Bring me to your ear to begin").font(.system(size: 14))
+          }
+          .foregroundStyle(SRColor.textTertiary)
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, SRSpacing.s12)
+        .padding(.bottom, SRSpacing.s24)
       }
       .padding(.horizontal, SRSpacing.s20)
       .padding(.top, SRSpacing.s8)
-      .padding(.bottom, SRSpacing.s16)
     }
     .onAppear { UIDevice.current.isProximityMonitoringEnabled = true }
     .onDisappear { UIDevice.current.isProximityMonitoringEnabled = false }
