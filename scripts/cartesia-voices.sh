@@ -22,7 +22,7 @@ if [[ ! -f "$CFG" ]]; then
   exit 1
 fi
 
-# Parse "CARTESIA_API_KEY = sk_car_..." (xcconfig syntax), strip spaces/quotes.
+# Parse the CARTESIA_API_KEY line (xcconfig syntax), strip spaces/quotes.
 KEY="$(grep -E '^[[:space:]]*CARTESIA_API_KEY[[:space:]]*=' "$CFG" \
   | head -1 | sed -E 's/^[^=]*=[[:space:]]*//' | tr -d '"' | xargs || true)"
 
