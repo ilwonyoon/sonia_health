@@ -10,18 +10,15 @@ struct NotificationsView: View {
     let id = UUID()
     let kind: JournalCheckinKind
     let time: String
-    let title: String
-    let body: String
+    let message: String
   }
 
   // Sonia-voiced, context-anchored. Tapping routes into the guided journal.
   private let notices: [Notice] = [
     .init(kind: .morningIntention, time: "7:02 AM",
-          title: "Good morning, Sarah",
-          body: "Let's take a minute to set today's intention together before the day picks up."),
+          message: "Good morning, Sarah. Let's take a minute to set today's intention together before the day picks up."),
     .init(kind: .eveningReflection, time: "9:14 PM",
-          title: "Winding down?",
-          body: "When you're ready, let's look back on today — the callback week's a lot to hold.")
+          message: "Winding down? When you're ready, let's look back on today — the callback week's a lot to hold.")
   ]
 
   var body: some View {
@@ -29,57 +26,60 @@ struct NotificationsView: View {
       SRColor.backgroundCanvas.ignoresSafeArea()
 
       ScrollView {
-        VStack(alignment: .leading, spacing: SRSpacing.s16) {
+        VStack(alignment: .leading, spacing: SRSpacing.s12) {
           SRText("Notifications", style: .navigationLargeTitle)
             .padding(.top, SRSpacing.s12)
+            .padding(.horizontal, SRSpacing.s4)
 
-          VStack(spacing: SRSpacing.s12) {
-            ForEach(notices) { notice in
-              Button { router.navigate(to: .checkin(notice.kind)) } label: {
-                noticeRow(notice)
-              }
-              .buttonStyle(.plain)
+          ForEach(notices) { notice in
+            Button { router.navigate(to: .checkin(notice.kind)) } label: {
+              noticeRow(notice)
             }
+            .buttonStyle(.plain)
           }
         }
-        .padding(.horizontal, SRSpacing.s20)
+        .padding(.horizontal, SRSpacing.s16)
       }
     }
   }
 
+  /// iOS-notification layout: app icon on the left; bold sender + time on the first row,
+  /// the message below. ~16pt inset.
   private func noticeRow(_ notice: Notice) -> some View {
-    SRCard(kind: .default) {
-      HStack(alignment: .top, spacing: SRSpacing.s12) {
-        appMark
-        VStack(alignment: .leading, spacing: SRSpacing.s4) {
-          HStack {
-            SRText("SONIA", style: .eyebrow, tone: .tertiary)
-            Spacer()
-            Text(notice.time)
-              .font(.system(size: 12))
-              .foregroundStyle(SRColor.textTertiary)
-          }
-          SRText(notice.title, style: .bodyEmphasis)
-          Text(notice.body)
-            .font(.system(size: 14))
-            .foregroundStyle(SRColor.textSecondary)
-            .multilineTextAlignment(.leading)
-            .fixedSize(horizontal: false, vertical: true)
+    HStack(alignment: .top, spacing: SRSpacing.s12) {
+      appMark
+      VStack(alignment: .leading, spacing: SRSpacing.s2) {
+        HStack(alignment: .firstTextBaseline) {
+          SRText("Sonia", style: .bodyEmphasis)
+          Spacer()
+          Text(notice.time)
+            .font(.system(size: 12))
+            .foregroundStyle(SRColor.textTertiary)
         }
+        Text(notice.message)
+          .font(.system(size: 14))
+          .foregroundStyle(SRColor.textSecondary)
+          .multilineTextAlignment(.leading)
+          .lineLimit(4)
+          .fixedSize(horizontal: false, vertical: true)
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(SRSpacing.cardPadding)
     }
+    .padding(SRSpacing.s16)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(
+      RoundedRectangle(cornerRadius: SRRadius.lg, style: .continuous)
+        .fill(SRColor.backgroundElevated)
+    )
   }
 
   /// Small "app icon" for the notification — Sonia's mark.
   private var appMark: some View {
     RoundedRectangle(cornerRadius: SRRadius.md, style: .continuous)
       .fill(SRColor.textPrimary)
-      .frame(width: 34, height: 34)
+      .frame(width: 38, height: 38)
       .overlay(
         Image(systemName: "waveform")
-          .font(.system(size: 16, weight: .semibold))
+          .font(.system(size: 17, weight: .semibold))
           .foregroundStyle(SRColor.backgroundCanvas)
       )
   }
