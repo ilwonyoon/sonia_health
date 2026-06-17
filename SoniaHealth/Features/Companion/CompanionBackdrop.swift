@@ -8,23 +8,30 @@ struct CompanionBackdrop: View {
 
   var body: some View {
     ZStack {
-      // Warm cream (top) settling into soft sand (bottom).
+      // Bright, airy warm base — kept high-value so it reads fresh, not muddy.
       LinearGradient(
         colors: [
-          Color(red: 0.99, green: 0.97, blue: 0.93),
-          Color(red: 0.97, green: 0.93, blue: 0.86),
-          Color(red: 0.93, green: 0.87, blue: 0.77)
+          Color(red: 1.00, green: 0.99, blue: 0.96),
+          Color(red: 1.00, green: 0.95, blue: 0.90),
+          Color(red: 0.99, green: 0.92, blue: 0.87)
         ],
         startPoint: .top, endPoint: .bottom
       )
-      // Soft warm glow up top so the screen feels lit, not flat.
+      // Warm apricot glow up top gives the screen life and lift.
       RadialGradient(
-        colors: [Color(red: 1.0, green: 0.96, blue: 0.89).opacity(0.9), .clear],
-        center: .init(x: 0.5, y: 0.22),
+        colors: [Color(red: 1.0, green: 0.86, blue: 0.72).opacity(0.45), .clear],
+        center: .init(x: 0.5, y: 0.28),
         startRadius: 0,
-        endRadius: 460
+        endRadius: 480
       )
-      Color.black.opacity(dim * 0.35)
+      // A faint blush in the lower corner adds a subtle two-tone so it isn't flat beige.
+      RadialGradient(
+        colors: [Color(red: 1.0, green: 0.80, blue: 0.80).opacity(0.22), .clear],
+        center: .init(x: 0.82, y: 0.86),
+        startRadius: 0,
+        endRadius: 420
+      )
+      Color.black.opacity(dim * 0.3)
     }
     .ignoresSafeArea()
   }
