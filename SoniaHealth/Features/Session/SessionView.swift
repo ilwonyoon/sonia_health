@@ -47,30 +47,46 @@ struct SessionView: View {
   // MARK: - Bottom controls
 
   private var controlBar: some View {
-    HStack {
-      endCallButton
-      Spacer()
-      HStack(spacing: SRSpacing.s16) {
-        SRGlassIconButton(
-          systemName: model.isMuted ? "mic.slash.fill" : "mic.fill",
-          accessibilityLabel: model.isMuted ? "Unmute" : "Mute",
-          foregroundColor: model.isMuted ? SRColor.feedbackDangerText : SRColor.textPrimary
-        ) { model.toggleMute() }
+    HStack(spacing: 0) {
+      glassControl(
+        systemName: model.isMuted ? "mic.slash.fill" : "mic.fill",
+        label: model.isMuted ? "Unmute" : "Mute",
+        tint: model.isMuted ? Color.red : SRColor.textPrimary
+      ) { model.toggleMute() }
+        .frame(maxWidth: .infinity)
 
-        SRGlassIconButton(
-          systemName: model.isSpeakerOn ? "speaker.wave.2.fill" : "speaker.slash.fill",
-          accessibilityLabel: "Speaker",
-          foregroundColor: SRColor.textPrimary
-        ) { model.toggleSpeaker() }
-      }
+      endCallButton
+        .frame(maxWidth: .infinity)
+
+      glassControl(
+        systemName: model.isSpeakerOn ? "speaker.wave.2.fill" : "speaker.slash.fill",
+        label: "Speaker",
+        tint: SRColor.textPrimary
+      ) { model.toggleSpeaker() }
+        .frame(maxWidth: .infinity)
     }
+  }
+
+  /// A 64pt glass circle control (mic / speaker), matching the end-call button's size.
+  private func glassControl(systemName: String, label: String, tint: Color,
+                            action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      Image(systemName: systemName)
+        .font(.system(size: 24, weight: .semibold))
+        .foregroundStyle(tint)
+        .frame(width: 64, height: 64)
+        .contentShape(Circle())
+    }
+    .buttonStyle(.plain)
+    .glassCircle()
+    .accessibilityLabel(label)
   }
 
   private var endCallButton: some View {
     Button(action: endCall) {
       ZStack {
         Circle()
-          .fill(SRColor.feedbackDangerText)
+          .fill(Color.red)   // standard phone hang-up red (systemRed)
           .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
         Image(systemName: "phone.down.fill")
           .font(.system(size: 24, weight: .semibold))
@@ -145,6 +161,15 @@ private extension View {
       glassEffect(.regular, in: Capsule(style: .continuous))
     } else {
       background(.ultraThinMaterial, in: Capsule(style: .continuous))
+    }
+  }
+
+  @ViewBuilder
+  func glassCircle() -> some View {
+    if #available(iOS 26.0, *) {
+      glassEffect(.regular.interactive(), in: Circle())
+    } else {
+      background(.ultraThinMaterial, in: Circle())
     }
   }
 }
